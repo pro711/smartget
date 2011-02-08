@@ -5,7 +5,7 @@
 MAXBUFFER = 1048576
 
 import socket
-import os
+import os,sys
 import time
 
 def requestdownload(url,dest):
@@ -39,4 +39,5 @@ def requestdownload(url,dest):
     fp.close()
 
 if __name__ == '__main__':
-    requestdownload('http://mirrors.163.com/debian-cd/6.0.0/i386/iso-cd/debian-6.0.0-i386-businesscard.iso','destination')
+    url = sys.argv[1]
+    requestdownload(url,sys.argv[1].split('/')[-1])
