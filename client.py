@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 # receive file from serve and save as destination
-
+n
 MAXBUFFER = 1048576
 
 import socket
