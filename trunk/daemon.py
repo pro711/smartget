@@ -21,10 +21,21 @@ def thread_send(client,thread_id):
         tosend = fifo[thread_id][:16384]
         fifo[thread_id] = fifo[thread_id][16384:]
         lock.release()
-        client.send(tosend)
+        try:
+            client.send(tosend)
+        except socket.error:
+            print 'broken pipe'
+            del(fifo[thread_id])
+            return
     lock.acquire()
-    client.send(fifo[thread_id])
-    fifo[thread_id] = ''
+    try:
+        client.send(fifo[thread_id])
+    except socket.error:
+        print 'broken pipe'
+        del(fifo[thread_id])
+        lock.release()
+        return
+    del(fifo[thread_id])
     lock.release()
 
 def thread_accept(c):
@@ -40,11 +51,13 @@ def thread_accept(c):
     print 'Got request:\nURL:'+request_list[0]+'\nStart:'+request_list[1]+'\nEnd:'+request_list[2]
     
     opener = MyURLopener()
-    opener.openurl(request_list[0],request_list[1],request_list[2])
+    try:
+        opener.openurl(request_list[0],request_list[1],request_list[2])
+    except IOError:
+        return
     
     finished[thread_id] = 0
     lock = threading.Lock()
-    
 
     data = opener.sock.read(16384)
     fifo[thread_id] = ''
@@ -73,6 +86,7 @@ def main():
     host = socket.gethostname()
     port = 1234
     s.bind((host,port))
+    s.settimeout(None)
     s.listen(5)
     
     while True:
@@ -87,4 +101,5 @@ def main():
         
 
 if __name__ == '__main__':
+    socket.setdefaulttimeout(5)
     main()
