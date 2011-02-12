@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+# -*- coding: utf-8 -*-
 from linkparser import LinkParser
 import re
 
@@ -8,7 +8,6 @@ class NetDiskParser():
     Example:
     ndp = NetDiskParser()
     ndp.feed(HTMLSource,'电信')
-
     all urls contains '电信' would be available in ndp.filelink
     """
     
