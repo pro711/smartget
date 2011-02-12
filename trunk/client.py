@@ -31,6 +31,7 @@ def thread_download(url,start,end,thread_id=0):
         wrote = complete = 0
         speed = 0
         while complete < end-start:
+#            raw_input('recv')   # debug
             file = s.recv(16384)
             buffer += file
             complete += len(file)
