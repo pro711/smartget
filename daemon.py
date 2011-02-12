@@ -8,35 +8,38 @@ import os
 from download import MyURLopener
 import threading
 
-def thread_send(client,thread_id):
-    """
-    thread of sending
+# def thread_send(client,thread_id):
+#     """
+#     thread of sending
 
-    """
-    global fifo, lock
-    global finished
+#     """
+#     global fifo, lock
+#     global finished
 
-    while finished[thread_id] == 0:
-        lock.acquire()
-        tosend = fifo[thread_id][:16384]
-        fifo[thread_id] = fifo[thread_id][16384:]
-        lock.release()
-        try:
-            client.send(tosend)
-        except socket.error:
-            print 'broken pipe'
-            del(fifo[thread_id])
-            return
-    lock.acquire()
-    try:
-        client.send(fifo[thread_id])
-    except socket.error:
-        print 'broken pipe'
-        del(fifo[thread_id])
-        lock.release()
-        return
-    del(fifo[thread_id])
-    lock.release()
+#     raw_input('start loop')   # debug
+#     while finished[thread_id] == 0:
+#         lock.acquire()
+#         tosend = fifo[thread_id][:16384]
+#         fifo[thread_id] = fifo[thread_id][16384:]
+#         lock.release()
+#         try:
+#             client.send(tosend)
+#             raw_input('after send')    # debug
+#         except socket.error:
+#             print 'broken pipe'
+#             del(fifo[thread_id])
+#             return
+#     raw_input('end loop')    # debug
+#     lock.acquire()
+#     try:
+#         client.send(fifo[thread_id])
+#     except socket.error:
+#         print 'broken pipe'
+#         del(fifo[thread_id])
+#         lock.release()
+#         return
+#     del(fifo[thread_id])
+#     lock.release()
 
 def thread_accept(c):
     """
@@ -61,17 +64,22 @@ def thread_accept(c):
 
     data = opener.sock.read(16384)
     fifo[thread_id] = ''
-    thread_send_instance = threading.Thread(target=thread_send,args=(c,thread_id))
-    thread_send_instance.start()
+    # thread_send_instance = threading.Thread(target=thread_send,args=(c,thread_id))
+    # raw_input('start send thread') # debug
+    # thread_send_instance.start()
+    # raw_input('url read loop')  # debug
     while data:
-        if not(thread_send_instance.is_alive()):
-            break
-        lock.acquire()
-        fifo[thread_id] += data
-        lock.release()
-        data = opener.sock.read(16384)
-    finished[thread_id] = 1
-    thread_send_instance.join()
+        # if not(thread_send_instance.is_alive()):
+        #     break
+        # lock.acquire()
+        # fifo[thread_id] += data
+        # lock.release()
+        c.send(data)
+        data = opener.sock.read(256*1024) #debug
+    # finished[thread_id] = 1
+    # raw_input('join')           # debug
+    # thread_send_instance.join()
+    c.send(data)
     c.close()
     
     
@@ -101,5 +109,5 @@ def main():
         
 
 if __name__ == '__main__':
-    socket.setdefaulttimeout(5)
+    #socket.setdefaulttimeout(5)   debug
     main()
