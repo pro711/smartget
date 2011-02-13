@@ -24,14 +24,14 @@ def thread_download(url,start,end,thread_id=0):
         s.connect((HOST,HOSTPORT))
         
         request = url + '\n' + str(start) + '\n' + str(end)
+        print request
         
         s.send(request)
         t = tstart = time.time()
         buffer = ''
         wrote = complete = 0
         speed = 0
-        while complete < end-start:
-#            raw_input('recv')   # debug
+        while complete <= end-start:
             file = s.recv(16384)
             buffer += file
             complete += len(file)
@@ -99,6 +99,6 @@ def requestdownload(url,dest):
     print 'download succeeded'
 
 if __name__ == '__main__':
-    socket.setdefaulttimeout(5)
+#    socket.setdefaulttimeout(5)
     url = sys.argv[1]
     requestdownload(url,sys.argv[1].split('/')[-1])
