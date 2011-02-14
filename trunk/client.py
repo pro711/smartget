@@ -30,10 +30,12 @@ def downloadBlock(url,start,end,thread_id):
         s.send(request)
 
         buffer = ''
+        complete = 0
 
         while complete <= end-start:
             file = s.recv(16384)
             buffer += file
+            complete += len(file)
 
         lock.acquire()
         fp.seek(start,os.SEEK_SET)
@@ -65,8 +67,7 @@ def splitFile(size):
     block_list = [[BLOCK_SIZE*i,BLOCK_SIZE*(i+1)-1,0] for i in range(size/BLOCK_SIZE)]
     if size % BLOCK_SIZE:
         block_list.append([BLOCK_SIZE*(size/BLOCK_SIZE),size-1,0])
-    print 'split file list:' + str(block_list)
-    raw_input()                 # debug
+    raw_input('Split file into %d blocks of %dkB.'%(len(block_list),BLOCK_SIZE/1024))
 
 def lookForUnstartedBlock():
     """Look for unstarted block and return it's property list.
@@ -82,7 +83,6 @@ def thread_download(url,thread_id):
     
     """
     global lock
-    global complete
     while True:
         lock.acquire()
         block = lookForUnstartedBlock()
@@ -90,7 +90,6 @@ def thread_download(url,thread_id):
             lock.release()
             break
         block[2] = 1
-        complete += 1
         lock.release()
         if downloadBlock(url,block[0],block[1],thread_id):
             lock.acquire()
@@ -108,7 +107,7 @@ def downloadFile(url,dest):
     - `dest`: destination file name
     """
     global fp,lock
-    global block_list,complete
+    global block_list
     
     file_size = getUrlFileSize(url)
     splitFile(file_size)
@@ -117,11 +116,9 @@ def downloadFile(url,dest):
     except IOError:
         print 'cannot open file!'
         exit()
-
-    complete = 0
+    time_start = time.time()
     thread_download_list = []
     lock = threading.Lock()
-    time_start = time.time()
     if file_size > BLOCK_SIZE:
         thread_download_list = [threading.Thread(target = thread_download,args=(url,i)) for i in range(THREAD)]
     else:
@@ -131,7 +128,7 @@ def downloadFile(url,dest):
     for thread in thread_download_list:
         thread.join()
     fp.close()
-    print 'download succeeded, AVS = %d kB/s' %(file_size/(time.time()-time_start)/1024)
+    print 'download succeeded, AVS = %d kB/s'%(file_size/1024/(time.time()-time_start))
 
 if __name__ == '__main__':
 #    socket.setdefaulttimeout(5)
