@@ -25,8 +25,8 @@ import socket
 HOST = '127.0.0.1'    # The remote host
 PORT = 20110          # The same port as used by the server
 
-
-def main():
+def test_register():
+    print 'Testing register...'
     for i in range(2):
         # register
         for port in range(10001,10010):
@@ -44,6 +44,60 @@ def main():
             data = s.recv(1024)
             s.close()
             print 'Received', repr(data)
+
+def test_set_status():
+    print 'Testing setstatus...'
+    for port in range(10001,10010):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((HOST, PORT))
+        s.send('`register %d' % port)
+        data = s.recv(1024)
+        s.close()
+        print 'Received', repr(data)
+    
+        _id = int(data.split('\r\n')[1])
+        
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((HOST, PORT))
+        s.send('`setstatus %d 1' % _id)
+        data = s.recv(1024)
+        s.close()
+        print 'Received', repr(data)
+
+    for port in range(10001,10010):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((HOST, PORT))
+        s.send('`deregister %d' % port)
+        data = s.recv(1024)
+        s.close()
+        print 'Received', repr(data)
+            
+def test_requestnodes():
+    print 'Testing requestnodes...'
+    for port in range(10001,10010):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((HOST, PORT))
+        s.send('`register %d' % port)
+        data = s.recv(1024)
+        s.close()
+        print 'Received', repr(data)
+
+    for i in [1,3,6,8]:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((HOST, PORT))
+        s.send('`requestnodes %d 0' % i)
+        data = s.recv(1024)
+        s.close()
+        print 'Received', repr(data)
+
+
+
+def main():
+    test_register()
+    
+    test_set_status()
+    
+    test_requestnodes()
 
 if __name__ == '__main__':
 	main()

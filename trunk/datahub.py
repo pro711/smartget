@@ -20,6 +20,7 @@ import os
 import sys
 import logging
 import socket
+import random
 
 '''This module implements a data hub for smartget networks.'''
 
@@ -84,7 +85,7 @@ class SmartgetDataHub(AbstractDataHub):
         return self.nodes
     
     def get_node_by_id(self, node_id):
-        return self.nodes[node_id]
+        return self.nodes.get(node_id, None)
     
     def get_node_ids_by_status(self, status):
         node_ids = filter(lambda i:self.nodes[i].status == status, self.nodes.keys())
@@ -109,11 +110,11 @@ class SmartgetDataHub(AbstractDataHub):
         return self.nodes[node_id].status
     
     def set_node_status(self, node_id, status):
-        if self.nodes.has_key(node.node_id):
-            self.nodes[node.node_id].status = status
-            return 1
+        if self.nodes.has_key(node_id):
+            self.nodes[node_id].status = status
+            return node_id
         else:
-            sys.stderr.write('Warning: Attempt to modify node %d which does not exist!' % node.node_id)
+            sys.stderr.write('Warning: Attempt to modify node %d which does not exist!' % node_id)
             return 0
     
 
@@ -181,8 +182,8 @@ class SmartgetDataHubDaemon:
         if not node_ids:
             node = self.dh.make_node(addr[0], client_port)
             self.dh.add_node(node)
-            self.logger.info('Registered new node at %s:%s!' % (addr[0], client_port))
-            conn.send('200 OK\r\n')
+            self.logger.info('Registered new node at %s:%s, ID=%d' % (addr[0], client_port, node.node_id))
+            conn.send('200 OK\r\n%d' % node.node_id)
         else:
             self.logger.error('Node already exists %s:%s!' % (addr[0], client_port))
             conn.send('400 BAD REQUEST\r\n')
@@ -200,13 +201,35 @@ class SmartgetDataHubDaemon:
             self.logger.info('Removed node at %s:%s!' % (addr[0], client_port))
             conn.send('200 OK\r\n')
         
-    def process_req_nodes_request(self, conn, addr, request):
+    def process_req_nodes_request(self, conn, addr, arg):
         '''Process request to request some nodes.'''
-        pass
+        n, status = arg.strip().split()
+        n, status = int(n), int(status)
+        node_ids = self.dh.get_node_ids_by_status(status)
+        n = min(n, len(node_ids))   # limit n to number of available nodes
+        if n > 0:
+            node_ids = random.sample(node_ids, n)
+            r = '200 OK\r\n'
+            for i in node_ids:
+                node = self.dh.get_node_by_id(i)
+                r += '%s %d\r\n' % (node.addr, node.port)
+            conn.send(r)
+        else:
+            r = '404 NOT FOUND\r\n'
+            conn.send(r)
+        
     
-    def process_set_status_request(self, conn, addr, request):
+    def process_set_status_request(self, conn, addr, arg):
         '''Process request to set the status of a node.'''
-        pass
+        node_id, status = arg.strip().split()
+        
+        if self.dh.set_node_status(int(node_id), int(status)):
+            self.logger.info('Node %s status set to %s' % (node_id, status))
+            conn.send('200 OK\r\n')
+        else:
+            self.logger.error('Node does not exist!')
+            conn.send('400 BAD REQUEST\r\n')
+            
     
     def process_init_download_request(self, conn, addr, request):
         '''Process request to initiate a download.'''
