@@ -9,9 +9,9 @@ from download import MyURLopener
 import threading
 import time
 
-# def thread_send(client,thread_id):
-#     """
-#     thread of sending
+def thread_send(client,thread_id):
+    """
+    thread of sending
 
     """
     global fifo, lock, cv
@@ -70,10 +70,8 @@ def thread_accept(c):
 
     data = opener.sock.read(16384)
     fifo[thread_id] = []
-    # thread_send_instance = threading.Thread(target=thread_send,args=(c,thread_id))
-    # raw_input('start send thread') # debug
-    # thread_send_instance.start()
-    # raw_input('url read loop')  # debug
+    thread_send_instance = threading.Thread(target=thread_send,args=(c,thread_id))
+    thread_send_instance.start()
     while data:
         if not(thread_send_instance.is_alive()):
             break
@@ -113,5 +111,5 @@ def main():
         
 
 if __name__ == '__main__':
-    #socket.setdefaulttimeout(5)   debug
+    socket.setdefaulttimeout(5)
     main()
