@@ -18,6 +18,8 @@
 
 import os
 import sys
+import logging
+import socket
 
 '''This module implements a data hub for smartget networks.'''
 
@@ -49,7 +51,7 @@ class AbstractDataHub:
         ''' Class initialiser '''
         pass
     
-    def make_node(self, node_id, addr, port, name=''):
+    def make_node(self, addr, port, name=''):
         pass
 
 class SmartgetDataHub(AbstractDataHub):
@@ -59,9 +61,10 @@ class SmartgetDataHub(AbstractDataHub):
         self.nodes = {}
         self.max_node_id = 0
     
-    def make_node(self, node_id, addr, port, name=''):
-        node = SmartgetNode(self.max_node_id+1, add, port, name)
+    def make_node(self, addr, port, name=''):
+        node = SmartgetNode(self.max_node_id+1, addr, port, name)
         self.max_node_id += 1
+        return node
     
     def add_node(self, node):
         if not self.nodes.has_key(node.node_id):
@@ -71,11 +74,11 @@ class SmartgetDataHub(AbstractDataHub):
             sys.stderr.write('Warning: Attempt to add node %d which already exists!' % node.node_id)
             return 0
     
-    def rm_node(self, node):
+    def rm_node(self, node_id):
         try:
-            del self.nodes[node.node_id]
+            del self.nodes[node_id]
         except KeyError:
-            sys.stderr.write('Warning: Attempt to remove node %d which does not exist!' % node.node_id)
+            sys.stderr.write('Warning: Attempt to remove node %d which does not exist!' % node_id)
     
     def get_nodes(self):
         return self.nodes
@@ -89,6 +92,11 @@ class SmartgetDataHub(AbstractDataHub):
     
     def get_node_ids_by_addr(self, addr):
         node_ids = filter(lambda i:self.nodes[i].addr == addr, self.nodes.keys())
+        return node_ids
+    
+    def get_node_ids_by_addr_port(self, addr, port):
+        node_ids = filter(lambda i:self.nodes[i].port == port, 
+            filter(lambda i:self.nodes[i].addr == addr, self.nodes.keys()))
         return node_ids
     
     def get_idle_node_ids(self):
@@ -111,40 +119,119 @@ class SmartgetDataHub(AbstractDataHub):
 
 class SmartgetDataHubDaemon:
     ''' Data hub daemon class for Smartget networks. '''
-    def __init__ (self):
+    def __init__ (self, port):
         ''' Class initialiser '''
         self.dh = SmartgetDataHub()
+        self.HOST = ''                 # Symbolic name meaning all available interfaces
+        self.PORT = port              # Arbitrary non-privileged port
+        # initialize logger
+        logging.basicConfig(level=logging.INFO)
+        self.logger = logging.getLogger('smartget.datahubdaemon')
+        # request dispatcher
+        self.dispatcher = {
+            'register':     self.process_node_reg_request,
+            'deregister':   self.process_node_rm_request,
+            'requestnodes': self.process_req_nodes_request,
+            'setstatus':    self.process_set_status_request
+        }
     
-    def listen(self):
+    def listen(self, s):
         '''Listen for incoming requests.'''
-        pass
+        self.logger.info('Listening on port %d' % self.PORT)
+        while True:
+            # serve forever
+            try:
+                conn, addr = s.accept()
+                self.logger.info('Connected by %s:%s' % addr)
+                data = conn.recv(1024)
+                if not data:
+                    conn.close()
+                    continue
+                self.process_request(conn, addr, data)
+                conn.close()
+            except KeyboardInterrupt:
+                print 'Interrupted by user.\nExiting...\n'
+                break
+
     
-    def parse_request(self, request):
+    def process_request(self, conn, addr, data):
         '''Parse and dispatch requests.'''
-        pass
+        data_list = data.strip().split(None, 1)
+        if not data_list:
+            self.logger.warning('Empty request content')
+            return -1
+        if data_list[0].startswith('`'):
+            # this is a client command
+            command = data_list[0][1:]
+            arg = data_list[1] if len(data_list) > 1 else None
+            try:
+                f = self.dispatcher[command]
+            except KeyError, e:
+                self.logger.error('Invalid request content/command: %s' % e)
+                return -1
+            # execute command
+            return f(conn, addr, arg)
+        else:
+            return None
     
-    def process_node_reg_request(self, request):
+    def process_node_reg_request(self, conn, addr, arg):
         '''Register a new node on the network.'''
-        pass
+        client_port = int(arg)
+        node_ids = self.dh.get_node_ids_by_addr_port(addr[0], client_port)
+        if not node_ids:
+            node = self.dh.make_node(addr[0], client_port)
+            self.dh.add_node(node)
+            self.logger.info('Registered new node at %s:%s!' % (addr[0], client_port))
+            conn.send('200 OK\r\n')
+        else:
+            self.logger.error('Node already exists %s:%s!' % (addr[0], client_port))
+            conn.send('400 BAD REQUEST\r\n')
+            conn.send('Node already exists!')
     
-    def process_node_rm_request(self, request):
+    def process_node_rm_request(self, conn, addr, arg):
         '''Remove an existing node from the network.'''
+        client_port = int(arg)
+        node_ids = self.dh.get_node_ids_by_addr_port(addr[0], client_port)
+        if not node_ids:
+            self.logger.error('Attempt to remove a node which does not exist!')
+            conn.send('404 NOT FOUND\r\n')
+        else:
+            self.dh.rm_node(node_ids[0])
+            self.logger.info('Removed node at %s:%s!' % (addr[0], client_port))
+            conn.send('200 OK\r\n')
+        
+    def process_req_nodes_request(self, conn, addr, request):
+        '''Process request to request some nodes.'''
         pass
     
-    def process_init_download_request(self, request):
+    def process_set_status_request(self, conn, addr, request):
+        '''Process request to set the status of a node.'''
+        pass
+    
+    def process_init_download_request(self, conn, addr, request):
         '''Process request to initiate a download.'''
         pass
     
-    def process_end_download_request(self, request):
+    def process_end_download_request(self, conn, addr, request):
         '''Process request to end a download.'''
         pass
     
     def run(self):
         '''Start data hub daemon.'''
-        pass
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind((self.HOST, self.PORT))
+        s.listen(5)
+        # start listening for incoming requests
+        self.listen(s)
+        s.close()
+    
+    
+
 
 def main():
-	return 0
+    PORT = 20110
+    dhd = SmartgetDataHubDaemon(PORT)
+    dhd.run()
 
 if __name__ == '__main__':
 	main()
