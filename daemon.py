@@ -92,7 +92,7 @@ def main():
     thread_accept_list = []
     
     s = socket.socket()
-    host = socket.gethostname()
+    host = '127.0.0.1'
     port = 1234
     s.bind((host,port))
     s.settimeout(None)
