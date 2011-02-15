@@ -3,16 +3,29 @@
 # receive file from serve and save as destination
 
 
-THREAD = 3
+THREAD = 1
 HOST = '127.0.0.1'
 HOSTPORT = 1234
 BLOCK_SIZE = 1048576
+DATAHUB = ('127.0.0.1',20110)
 
 import socket
 import os,sys
 import time
 import urllib
 import threading
+
+def getIdleNode():
+    """Get an idle node
+    """
+    datahub_socket = socket.socket()
+    datahub_socket.connect(DATAHUB)
+    datahub_socket.send('`requestnodes 1 0')
+    datahub_list = datahub_socket.recv(1024).split('\r\n')
+    if datahub_list[0] == '200 OK':
+        a,p =  datahub_list[1].split(' ')
+        datahub_socket.close()
+        return (a,int(p))
 
 
 def downloadBlock(url,start,end,thread_id):
@@ -22,7 +35,8 @@ def downloadBlock(url,start,end,thread_id):
     
     s = socket.socket()
     try:
-        s.connect((HOST,HOSTPORT))
+        node_addr,node_port = getIdleNode()
+        s.connect((node_addr,node_port))
         
         request = url + '\n' + str(start) + '\n' + str(end)
         print request
