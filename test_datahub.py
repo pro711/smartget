@@ -64,6 +64,8 @@ def test_set_status():
         s.close()
         print 'Received', repr(data)
 
+def test_deregister():
+    print 'Testing deregister...'
     for port in range(10001,10010):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((HOST, PORT))
@@ -74,18 +76,10 @@ def test_set_status():
             
 def test_requestnodes():
     print 'Testing requestnodes...'
-    for port in range(10001,10010):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((HOST, PORT))
-        s.send('`register %d' % port)
-        data = s.recv(1024)
-        s.close()
-        print 'Received', repr(data)
-
     for i in [1,3,6,8]:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((HOST, PORT))
-        s.send('`requestnodes %d 0' % i)
+        s.send('`requestnodes %d' % i)
         data = s.recv(1024)
         s.close()
         print 'Received', repr(data)
@@ -93,11 +87,10 @@ def test_requestnodes():
 
 
 def main():
-    test_register()
-    
+    #~ test_register()
     test_set_status()
-    
     test_requestnodes()
+    test_deregister()
 
 if __name__ == '__main__':
 	main()

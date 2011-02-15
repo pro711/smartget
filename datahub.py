@@ -33,10 +33,9 @@ class SmartgetNode:
             1,2,3...: ordinary nodes
         
         node status:
-            0: UNINITIALZED
-            1: IDLE
-            2: BUSY
-            9: ZOMBIE
+            0: not available
+            1,2,3...: number of availble connections
+            -1: zombie
         '''
         self.node_id = node_id
         self.addr = addr
@@ -91,6 +90,10 @@ class SmartgetDataHub(AbstractDataHub):
         node_ids = filter(lambda i:self.nodes[i].status == status, self.nodes.keys())
         return node_ids
     
+    def get_available_node_ids(self):
+        node_ids = filter(lambda i:self.nodes[i].status>0, self.nodes.keys())
+        return node_ids
+    
     def get_node_ids_by_addr(self, addr):
         node_ids = filter(lambda i:self.nodes[i].addr == addr, self.nodes.keys())
         return node_ids
@@ -116,6 +119,15 @@ class SmartgetDataHub(AbstractDataHub):
         else:
             sys.stderr.write('Warning: Attempt to modify node %d which does not exist!' % node_id)
             return 0
+    
+    def decrease_node_status(self, node_id, n=1):
+        if self.nodes.has_key(node_id):
+            self.nodes[node_id].status -= n
+            return node_id
+        else:
+            sys.stderr.write('Warning: Attempt to modify node %d which does not exist!' % node_id)
+            return 0
+        
     
 
 class SmartgetDataHubDaemon:
@@ -186,8 +198,7 @@ class SmartgetDataHubDaemon:
             conn.send('200 OK\r\n%d' % node.node_id)
         else:
             self.logger.error('Node already exists %s:%s!' % (addr[0], client_port))
-            conn.send('400 BAD REQUEST\r\n')
-            conn.send('Node already exists!')
+            conn.send('400 BAD REQUEST\r\nNode already exists!')
     
     def process_node_rm_request(self, conn, addr, arg):
         '''Remove an existing node from the network.'''
@@ -202,16 +213,16 @@ class SmartgetDataHubDaemon:
             conn.send('200 OK\r\n')
         
     def process_req_nodes_request(self, conn, addr, arg):
-        '''Process request to request some nodes.'''
-        n, status = arg.strip().split()
-        n, status = int(n), int(status)
-        node_ids = self.dh.get_node_ids_by_status(status)
+        '''Process request to request some available nodes.'''
+        n = int(arg.strip().split()[0])
+        node_ids = self.dh.get_available_node_ids()
         n = min(n, len(node_ids))   # limit n to number of available nodes
         if n > 0:
             node_ids = random.sample(node_ids, n)
             r = '200 OK\r\n'
             for i in node_ids:
                 node = self.dh.get_node_by_id(i)
+                self.dh.decrease_node_status(i)
                 r += '%s %d\r\n' % (node.addr, node.port)
             conn.send(r)
         else:
