@@ -2,6 +2,9 @@
 
 # run server, a file named source will be read and sent to client
 DOWNLOAD_BLOCK_SIZE = 262144
+HOSTNAME = '127.0.0.1'
+PORT = 1234
+DATAHUB = ('127.0.0.1',20110)
 
 import socket
 import os
@@ -90,23 +93,40 @@ def main():
     fifo = {}
     finished = {}
     thread_accept_list = []
-    
+
+    datahub_socket = socket.socket()
+    datahub_socket.connect(DATAHUB)
+    datahub_socket.send('`register '+str(PORT))
+    datahub_message_list = datahub_socket.recv(1024).split('\r\n')
+    if datahub_message_list[0]=='200 OK':
+        node_id = int(datahub_message_list[1])
+        print 'Registered successfully. ID = %d'%node_id
+    else:
+        print 'register error! '+ datahub_message_list[1]
+    datahub_socket.close()
+        
     s = socket.socket()
-    host = '127.0.0.1'
-    port = 1234
-    s.bind((host,port))
+    s.bind((HOSTNAME,PORT))
     s.settimeout(None)
     s.listen(5)
     cv = threading.Condition()
     
-    while True:
-        c,addr=s.accept()
-
-        print 'Got connection from',addr
-        thread_accept_instance = threading.Thread(target=thread_accept,args=((c,)))
-        thread_accept_list.append(thread_accept_instance)
-        thread_accept_instance.start()
-
+    try:
+        while True:
+            c,addr=s.accept()
+            print 'Got connection from',addr
+            thread_accept_instance = threading.Thread(target=thread_accept,args=((c,)))
+            thread_accept_list.append(thread_accept_instance)
+            thread_accept_instance.start()
+    except KeyboardInterrupt:
+        print 'Interrupted by user.\nExiting...'
+        datahub_socket = socket.socket()
+        datahub_socket.connect(DATAHUB)
+        datahub_socket.send('`deregister '+str(PORT))
+        datahub_message_list = datahub_socket.recv(1024).split('\r\n')
+        if datahub_message_list[0]!='200 OK':
+            print 'Deregister error!\n'+datahub_message_list[0]
+        exit()
         
         
 
