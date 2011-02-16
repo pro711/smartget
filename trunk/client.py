@@ -19,7 +19,7 @@
 # receive file from serve and save as destination
 
 
-THREAD = 1
+THREAD = 3
 HOST = '127.0.0.1'
 HOSTPORT = 1234
 BLOCK_SIZE = 1048576
@@ -31,6 +31,7 @@ import time
 import urllib
 import threading
 from protocol import SmartGetProtocol
+import urlparser
 
 def downloadBlock(url,start,end,thread_id):
     """thread of downloading a block
@@ -122,7 +123,7 @@ def thread_download(url,thread_id):
             lock.wait(1)
             lock.release()
 
-def downloadFile(url,dest):
+def downloadFile(url):
     """request a download
     Arguments:
     - `url`: a string of url to download
@@ -131,8 +132,20 @@ def downloadFile(url,dest):
     global fp,lock
     global block_list
 
-    file_size = getUrlFileSize(url)
+    url,dest = urlparser.UrlParser().parse(url)
+    if url.__class__==[].__class__:
+        file_size = [getUrlFileSize(i)  for i in url]
+        for i in file_size[1:]:
+            if file_size[0] != i:
+                print "File size doesn't match!"
+                exit()
+        file_size = file_size[0]
+        print url,dest
+    else:
+        file_size = getUrlFileSize(url)
+        
     splitFile(file_size)
+
     try:
         fp = open(dest,'wb')
     except IOError:
@@ -141,8 +154,14 @@ def downloadFile(url,dest):
     time_start = time.time()
     thread_download_list = []
     lock = threading.Condition() # debug
+    
     if file_size > BLOCK_SIZE:
-        thread_download_list = [threading.Thread(target = thread_download,args=(url,i)) for i in range(THREAD)]
+        if url.__class__==[].__class__:
+            while len(url)<THREAD:
+                url = url * 2
+            thread_download_list = [threading.Thread(target = thread_download,args=(url[i],i)) for i in range(THREAD)]
+        else:
+            thread_download_list = [threading.Thread(target = thread_download,args=(url,i)) for i in range(THREAD)]
     else:
         thread_download_list = [threading.Thread(target = thread_download,args=(url,0))]
     for thread in thread_download_list:
@@ -155,4 +174,4 @@ def downloadFile(url,dest):
 if __name__ == '__main__':
 #    socket.setdefaulttimeout(5)
     url = sys.argv[1]
-    downloadFile(url,sys.argv[1].split('/')[-1])
+    downloadFile(url)
