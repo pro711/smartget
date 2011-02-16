@@ -1,4 +1,20 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#       client.py
+#       
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 # receive file from serve and save as destination
 
@@ -14,19 +30,7 @@ import os,sys
 import time
 import urllib
 import threading
-
-def getIdleNode():
-    """Get an idle node
-    """
-    datahub_socket = socket.socket()
-    datahub_socket.connect(DATAHUB)
-    datahub_socket.send('`requestnodes 1 0')
-    datahub_list = datahub_socket.recv(1024).split('\r\n')
-    if datahub_list[0] == '200 OK':
-        a,p =  datahub_list[1].split(' ')
-        datahub_socket.close()
-        return (a,int(p))
-
+from protocol import SmartGetProtocol
 
 def downloadBlock(url,start,end,thread_id):
     """thread of downloading a block
@@ -35,8 +39,11 @@ def downloadBlock(url,start,end,thread_id):
     
     s = socket.socket()
     try:
-        node_addr,node_port = getIdleNode()
-        s.connect((node_addr,node_port))
+        node = SmartGetProtocol(DATAHUB).requestnodes()
+        if not node:
+            print 'Get node failed'
+            return
+        s.connect(node)
         
         request = url + '\n' + str(start) + '\n' + str(end)
         print request
@@ -112,6 +119,7 @@ def thread_download(url,thread_id):
         else:
             lock.acquire()
             block[2] = 0
+            lock.wait(1)
             lock.release()
 
 def downloadFile(url,dest):
@@ -122,7 +130,7 @@ def downloadFile(url,dest):
     """
     global fp,lock
     global block_list
-    
+
     file_size = getUrlFileSize(url)
     splitFile(file_size)
     try:
@@ -132,7 +140,7 @@ def downloadFile(url,dest):
         exit()
     time_start = time.time()
     thread_download_list = []
-    lock = threading.Lock()
+    lock = threading.Condition() # debug
     if file_size > BLOCK_SIZE:
         thread_download_list = [threading.Thread(target = thread_download,args=(url,i)) for i in range(THREAD)]
     else:
