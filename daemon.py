@@ -1,16 +1,34 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+#       daemon.py
+#       
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 # run server, a file named source will be read and sent to client
 DOWNLOAD_BLOCK_SIZE = 262144
 HOSTNAME = '127.0.0.1'
 PORT = 1234
 DATAHUB = ('127.0.0.1',20110)
+THREAD = 1
 
 import socket
 import os
 from download import MyURLopener
 import threading
 import time
+from protocol import SmartGetProtocol
 
 def thread_send(client,thread_id):
     """
@@ -56,7 +74,12 @@ def thread_accept(c):
     """
     global fifo, lock, cv
     global finished
+    global status
+    global datahub_protocol_handler
 
+    lock.acquire()
+    status -= 1
+    lock.release()
     thread_id = threading._get_ident()
 
     request_list = c.recv(1024).split('\n')
@@ -69,7 +92,6 @@ def thread_accept(c):
         return
     
     finished[thread_id] = 0
-    lock = threading.Lock()
 
     data = opener.sock.read(16384)
     fifo[thread_id] = []
@@ -85,25 +107,26 @@ def thread_accept(c):
     finished[thread_id] = 1
     thread_send_instance.join()
     c.close()
-    
-    
+    lock.acquire()
+    status += 1
+    datahub_protocol_handler.setstatus(status)
+    lock.release()
+
 def main():
     global fifo, lock, cv
-    global finished
+    global finished, status
+    global datahub_protocol_handler
+    lock = threading.Lock()
+    status = THREAD
     fifo = {}
     finished = {}
     thread_accept_list = []
 
-    datahub_socket = socket.socket()
-    datahub_socket.connect(DATAHUB)
-    datahub_socket.send('`register '+str(PORT))
-    datahub_message_list = datahub_socket.recv(1024).split('\r\n')
-    if datahub_message_list[0]=='200 OK':
-        node_id = int(datahub_message_list[1])
-        print 'Registered successfully. ID = %d'%node_id
-    else:
-        print 'register error! '+ datahub_message_list[1]
-    datahub_socket.close()
+    datahub_protocol_handler = SmartGetProtocol(DATAHUB,PORT)
+
+    datahub_protocol_handler.register()
+
+    datahub_protocol_handler.setstatus(status)
         
     s = socket.socket()
     s.bind((HOSTNAME,PORT))
@@ -119,13 +142,8 @@ def main():
             thread_accept_list.append(thread_accept_instance)
             thread_accept_instance.start()
     except KeyboardInterrupt:
-        print 'Interrupted by user.\nExiting...'
-        datahub_socket = socket.socket()
-        datahub_socket.connect(DATAHUB)
-        datahub_socket.send('`deregister '+str(PORT))
-        datahub_message_list = datahub_socket.recv(1024).split('\r\n')
-        if datahub_message_list[0]!='200 OK':
-            print 'Deregister error!\n'+datahub_message_list[0]
+        print '\nInterrupted by user.\nExiting...'
+        datahub_protocol_handler.deregister()
         exit()
         
         
