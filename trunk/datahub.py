@@ -21,6 +21,7 @@ import sys
 import logging
 import socket
 import random
+import threading
 
 '''This module implements a data hub for smartget networks.'''
 
@@ -137,6 +138,7 @@ class SmartgetDataHubDaemon:
         self.dh = SmartgetDataHub()
         self.HOST = ''                 # Symbolic name meaning all available interfaces
         self.PORT = port              # Arbitrary non-privileged port
+        self.lock = threading.Lock()
         # initialize logger
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger('smartget.datahubdaemon')
@@ -155,18 +157,24 @@ class SmartgetDataHubDaemon:
             # serve forever
             try:
                 conn, addr = s.accept()
-                self.logger.info('Connected by %s:%s' % addr)
-                data = conn.recv(1024)
-                if not data:
-                    conn.close()
-                    continue
-                self.process_request(conn, addr, data)
-                conn.close()
+                thread_accept_instance = threading.Thread(target=self.thread_accept,args=(conn,addr))
+                thread_accept_instance.start()
             except KeyboardInterrupt:
                 print 'Interrupted by user.\nExiting...\n'
                 break
 
-    
+
+    def thread_accept(self,conn,addr):
+        '''thread of accepting an incoming request.'''
+        self.logger.info('Connected by %s:%s' % addr)
+        data = conn.recv(1024)
+        if not data:
+            conn.close()
+            return
+        self.process_request(conn, addr, data)
+        conn.close()
+        
+        
     def process_request(self, conn, addr, data):
         '''Parse and dispatch requests.'''
         data_list = data.strip().split(None, 1)
@@ -183,7 +191,10 @@ class SmartgetDataHubDaemon:
                 self.logger.error('Invalid request content/command: %s' % e)
                 return -1
             # execute command
-            return f(conn, addr, arg)
+            self.lock.acquire()
+            f_return= f(conn, addr, arg)
+            self.lock.release()
+            return f_return
         else:
             return None
     
