@@ -22,7 +22,8 @@ class UrlParser():
     """Parse url smartly
     """
 
-    keywords = {'u115':r'u.115.com'
+    keywords = {'u115':r'u.115.com',
+                'xdowns':r'http://www.xdowns.com/soft/softdown.asp'
                 }
     
     def parse(self,url):
@@ -48,4 +49,24 @@ class UrlParser():
         url = [k for k,v in lp.links.iteritems() if re.search(r'(tel|cnc|bak)',k)]
         filename = urllib.unquote(url[0].split('file=')[-1].split('&')[0])
         
+        return url,filename
+
+    def xdowns_parser(self,url):
+        """
+        xdowns.com parser
+        Arguments:
+        - `self`:
+        - `urllib`:
+        """
+        import urllib
+        from linkparser import LinkParser
+        import urlparse
+        data = urllib.urlopen(url).read()
+        lp = LinkParser()
+        lp.feed(data)
+        url = [urlparse.urljoin('http://www.xdowns.com/soft/',k) for k,v in lp.links.iteritems() if (re.search('下载地址：'.decode('utf8').encode('gbk'),v) and not re.search('迅雷'.decode('utf8').encode('gbk'),v))  ]
+
+        data = urllib.urlopen(url[0])
+        filename = urllib.unquote(data.geturl().split('/')[-1])
+        print url
         return url,filename
