@@ -133,6 +133,7 @@ def downloadFile(url):
     global block_list
 
     url,dest = urlparser.UrlParser().parse(url)
+    print 'Info: File name: '+dest
     if url.__class__==[].__class__:
         file_size = [getUrlFileSize(i)  for i in url]
         for i in file_size[1:]:
@@ -140,7 +141,6 @@ def downloadFile(url):
                 print "File size doesn't match!"
                 exit()
         file_size = file_size[0]
-        print url,dest
     else:
         file_size = getUrlFileSize(url)
         
