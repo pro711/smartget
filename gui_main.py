@@ -20,10 +20,11 @@
 Module implementing gui_main.
 """
 
-from PyQt4.QtGui import QMainWindow
+from PyQt4.QtGui import QMainWindow,QDialog
 from PyQt4.QtCore import pyqtSignature
 import PyQt4
-from Ui_main import Ui_MainWindow
+from ui.Ui_main import Ui_MainWindow
+from ui.dialog_newmission import Ui_dialog_NewMission
 import subprocess,sys
 
 class GuiMain(QMainWindow, Ui_MainWindow):
@@ -34,6 +35,7 @@ class GuiMain(QMainWindow, Ui_MainWindow):
         """
         Constructor
         """
+        self.new_mission = GuiNewMissionDialog()
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
     
@@ -48,6 +50,33 @@ class GuiMain(QMainWindow, Ui_MainWindow):
         else:
             self.p.terminate()
             self.startDaemon.setText(u'开启Daemon')
+
+    def on_newMission_clicked(self):
+        """
+        Start a new mission, show the newmission dialog box.
+        """
+        self.new_mission.setVisible(True)
+
+class GuiNewMissionDialog(QDialog, Ui_dialog_NewMission):
+    """
+    A dialog box, to read url
+    """
+    def __init__(self, parent = None):
+        """
+        Constructor
+        Arguments:
+        - `self`:
+        - `parent`:
+        """
+        QDialog.__init__(self, parent)
+        self.setupUi(self)
+        self.clients = []
+
+    def on_buttonBox_NewMission_accepted(self):
+        """
+        Url confirm. start client.
+        """
+        self.clients.append(subprocess.Popen(('./client.py',self.lineEdit_url.text())))
 
 if __name__ == "__main__":
     app = PyQt4.QtGui.QApplication(sys.argv)

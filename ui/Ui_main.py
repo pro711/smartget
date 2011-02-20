@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'main.ui'
+# Form implementation generated from reading ui file '/home/ltn/dev/pyqt_designer/main.ui'
 #
-# Created: Sat Feb 19 21:48:57 2011
+# Created: Sat Feb 19 21:53:41 2011
 #      by: PyQt4 UI code generator 4.7.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -85,4 +85,14 @@ class Ui_MainWindow(object):
         self.menu_2.setTitle(QtGui.QApplication.translate("MainWindow", "编辑", None, QtGui.QApplication.UnicodeUTF8))
         self.action.setText(QtGui.QApplication.translate("MainWindow", "首选项", None, QtGui.QApplication.UnicodeUTF8))
         self.action_2.setText(QtGui.QApplication.translate("MainWindow", "添加", None, QtGui.QApplication.UnicodeUTF8))
+
+
+if __name__ == "__main__":
+    import sys
+    app = QtGui.QApplication(sys.argv)
+    MainWindow = QtGui.QMainWindow()
+    ui = Ui_MainWindow()
+    ui.setupUi(MainWindow)
+    MainWindow.show()
+    sys.exit(app.exec_())
 
