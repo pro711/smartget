@@ -45,9 +45,9 @@ def thread_send(client,thread_id):
             tosend = fifo[thread_id][0]
         except IndexError:
             lock.release()
-            cv.acquire()
-            cv.wait(0.1)
-            cv.release()
+#            cv.acquire()
+            time.sleep(0.1)        # debug
+ #           cv.release()
             continue
         lock.release()
         try:
