@@ -89,7 +89,7 @@ def splitFile(size):
     block_list = [[BLOCK_SIZE*i,BLOCK_SIZE*(i+1)-1,0] for i in range(size/BLOCK_SIZE)]
     if size % BLOCK_SIZE:
         block_list.append([BLOCK_SIZE*(size/BLOCK_SIZE),size-1,0])
-    raw_input('Split file into %d blocks of %dkB.'%(len(block_list),BLOCK_SIZE/1024))
+    print 'Split file into %d blocks of %dkB.'%(len(block_list),BLOCK_SIZE/1024)
 
 def lookForUnstartedBlock():
     """Look for unstarted block and return it's property list.
