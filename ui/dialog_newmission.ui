@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>dialog_NewMission</class>
+ <widget class="QDialog" name="dialog_NewMission">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>528</width>
+    <height>99</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>新任务</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QLabel" name="label_url">
+       <property name="text">
+        <string>Url:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="lineEdit_url"/>
+     </item>
+     <item>
+      <widget class="QDialogButtonBox" name="buttonBox_NewMission">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="standardButtons">
+        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>buttonBox_NewMission</sender>
+   <signal>accepted()</signal>
+   <receiver>dialog_NewMission</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>228</x>
+     <y>76</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>157</x>
+     <y>98</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox_NewMission</sender>
+   <signal>rejected()</signal>
+   <receiver>dialog_NewMission</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>380</x>
+     <y>78</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>382</x>
+     <y>136</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>
