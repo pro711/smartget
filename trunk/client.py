@@ -19,11 +19,12 @@
 # receive file from serve and save as destination
 
 
-THREAD = 3
+THREAD = 1
 HOST = '127.0.0.1'
 HOSTPORT = 1234
 BLOCK_SIZE = 1048576
 DATAHUB = ('127.0.0.1',20110)
+
 
 import socket
 import os,sys
@@ -36,7 +37,7 @@ import urlparser
 def downloadBlock(url,start,end,thread_id):
     """thread of downloading a block
     """
-    global fp,lock
+    global fp,lock,total_completed,file_size
     
     s = socket.socket()
     try:
@@ -47,8 +48,6 @@ def downloadBlock(url,start,end,thread_id):
         s.connect(node)
         
         request = url + '\n' + str(start) + '\n' + str(end)
-        print request
-        sys.stdout.flush()
         
         s.send(request)
 
@@ -62,10 +61,11 @@ def downloadBlock(url,start,end,thread_id):
 
         lock.acquire()
         fp.seek(start,os.SEEK_SET)
-        print 'writing' + str(len(buffer))
         sys.stdout.flush()
         fp.write(buffer)
+        total_completed += BLOCK_SIZE
         lock.release()
+        print 'Info: Completed: %d/%dkB'%(total_completed/1024,file_size/1024)
     except socket.timeout:
         print 'time out'
         return
@@ -131,11 +131,12 @@ def downloadFile(url):
     - `url`: a string of url to download
     - `dest`: destination file name
     """
-    global fp,lock
+    global fp,lock,total_completed,file_size
     global block_list
 
     url,dest = urlparser.UrlParser().parse(url)
     print 'Info: FileName: '+dest
+    print 'Info: BlockSize: '+ str(BLOCK_SIZE)
 
     if url.__class__==[].__class__:
         file_size = [getUrlFileSize(i)  for i in url]
@@ -159,6 +160,7 @@ def downloadFile(url):
     time_start = time.time()
     thread_download_list = []
     lock = threading.Condition() # debug
+    total_completed = 0
     
     if file_size > BLOCK_SIZE:
         if url.__class__==[].__class__:

@@ -19,6 +19,7 @@
 """
 Module implementing gui_main.
 """
+CALC_SPEED_PER_X_BLOCK = 10
 
 from PyQt4.QtGui import QMainWindow,QDialog
 from PyQt4.QtCore import pyqtSignature
@@ -108,28 +109,6 @@ class Thread_RefreshGui(threading.Thread):
             if data.startswith('Info'):
                 data_list = data.split(': ')
                 getattr(self,data_list[1]+'_parser')(data_list)
-            # cv.acquire()
-            # client_output_list = []
-            # client_output_list = [i.stdout.readline() for i in client_subprocess] # todo
-            # for i in client_subprocess:
-            #     data = i.stdout.readline()
-            #     while data:
-            #         client_output_list.append([])
-            #         client_output_list[i].append(data)
-            #         data = i.stdout.readline()
-            # cv.release()
-            # for i in client_output_list:
-            #     print i
-            #     for j in i:
-            #         if i.startswith('Info'):
-            #             print 'starts with Info'
-            #             j_list = j.split(': ')
-            #             if j_list[1] == 'File name':
-            #                 print 'j_list[1] == File Name'
-            #                 item = PyQt4.QtGui.QTableWidgetItem()
-            #                 item.setText(j_list[2])
-            #                 ui.tableWidget.setItem(0,0,item)
-            # time.sleep(1)
 
     def FileName_parser(self,list):
         """
@@ -140,6 +119,17 @@ class Thread_RefreshGui(threading.Thread):
         item = PyQt4.QtGui.QTableWidgetItem()
         item.setText(list[2])
         ui.tableWidget.setItem(0,0,item)
+
+    def BlockSize_parser(self,list):
+        """
+        parser of BlockSize
+        Arguments:
+        - `self`:
+        - `list`:
+        """
+        self.block_size = int(list[2])
+        self.completed_block = 0
+        self.time = time.time()
             
     def FileSize_parser(self,list):
         """
@@ -149,9 +139,53 @@ class Thread_RefreshGui(threading.Thread):
         - `list`:
         """
         item = PyQt4.QtGui.QTableWidgetItem()
-        item.setText(list[2])
+        self.file_size = list[2].strip()[:-2]
+        print self.file_size
+        item.setText(self.nomalize_size(self.file_size))
         ui.tableWidget.setItem(0,1,item)
 
+    def Completed_parser(self,list):
+        """
+        parser of Completed Size
+        Arguments:
+        - `self`:
+        - `list`:
+        """
+        item = PyQt4.QtGui.QTableWidgetItem()
+        item2 = PyQt4.QtGui.QTableWidgetItem()
+        item3 = PyQt4.QtGui.QTableWidgetItem()
+        completed = list[2].split('/')[0]
+        item.setText(self.nomalize_size(completed))
+        ui.tableWidget.setItem(0,2,item)
+        percentage = float(completed)/float(self.file_size)*100
+        item2.setText('%d%%'%percentage)
+        ui.tableWidget.setItem(0,3,item2)
+        self.completed_block += 1
+        if self.completed_block == CALC_SPEED_PER_X_BLOCK:
+            new_time = time.time()
+            speed = self.block_size * CALC_SPEED_PER_X_BLOCK / (new_time - self.time) / 1024
+            item3.setText('%d kB/s'%speed)
+            ui.tableWidget.setItem(0,5,item3)
+            self.time = new_time
+            completed_block = 0
+                
+    def nomalize_size(self,size):
+        """
+        transfer kB into MB if necessary
+        Arguments:
+        - `self`:
+        - `size`:
+        """
+        if size[-2:] == 'kB':
+            if len(size[:-2])>4:
+                return '%dMB'%(int(size[:-2])/1024)
+            else:
+                return size
+        else:
+            if len(size)>4:
+                return '%dMB'%(int(size)/1024)
+            else:
+                return size+'kB'
 
 if __name__ == "__main__":
     global cv
