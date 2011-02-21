@@ -37,7 +37,7 @@ import urlparser
 def downloadBlock(url,start,end,thread_id):
     """thread of downloading a block
     """
-    global fp,lock,total_completed,file_size
+    global fp,lock,total_completed,file_size,lock_nodes,nodes_linked
     
     s = socket.socket()
     try:
@@ -45,6 +45,11 @@ def downloadBlock(url,start,end,thread_id):
         if not node:
             print 'Get node failed'
             return
+        
+        lock_nodes.acquire()
+        nodes_linked += 1
+        lock_nodes.release()
+        
         s.connect(node)
         
         request = url + '\n' + str(start) + '\n' + str(end)
@@ -61,11 +66,16 @@ def downloadBlock(url,start,end,thread_id):
 
         lock.acquire()
         fp.seek(start,os.SEEK_SET)
-        sys.stdout.flush()
         fp.write(buffer)
         total_completed += BLOCK_SIZE
         lock.release()
         print 'Info: Completed: %d/%dkB'%(total_completed/1024,file_size/1024)
+        lock_nodes.acquire()
+        print 'Info: LinkedNodes: %d'%nodes_linked
+        nodes_linked -= 1
+        lock_nodes.release()
+        sys.stdout.flush()
+        
     except socket.timeout:
         print 'time out'
         return
@@ -122,7 +132,7 @@ def thread_download(url,thread_id):
         else:
             lock.acquire()
             block[2] = 0
-            lock.wait(1)
+            time.sleep(1)
             lock.release()
 
 def downloadFile(url):
@@ -131,12 +141,10 @@ def downloadFile(url):
     - `url`: a string of url to download
     - `dest`: destination file name
     """
-    global fp,lock,total_completed,file_size
+    global fp,lock,total_completed,file_size,lock_nodes,nodes_linked
     global block_list
 
     url,dest = urlparser.UrlParser().parse(url)
-    print 'Info: FileName: '+dest
-    print 'Info: BlockSize: '+ str(BLOCK_SIZE)
 
     if url.__class__==[].__class__:
         file_size = [getUrlFileSize(i)  for i in url]
@@ -148,8 +156,11 @@ def downloadFile(url):
     else:
         file_size = getUrlFileSize(url)
 
+    print 'Info: FileName: '+dest
+    print 'Info: BlockSize: '+ str(BLOCK_SIZE)
     print 'Info: FileSize: %dkB'%(file_size/1024)
     sys.stdout.flush()
+    
     splitFile(file_size)
 
     try:
@@ -159,7 +170,9 @@ def downloadFile(url):
         exit()
     time_start = time.time()
     thread_download_list = []
-    lock = threading.Condition() # debug
+    nodes_linked = 0
+    lock = threading.Lock()
+    lock_nodes = threading.Lock()
     total_completed = 0
     
     if file_size > BLOCK_SIZE:

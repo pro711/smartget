@@ -64,8 +64,6 @@ class GuiNewMissionDialog(QDialog, Ui_dialog_NewMission):
     """
     A dialog box, to read url
     """
-    global client_subprocess,cv
-    
     def __init__(self, parent = None):
         """
         Constructor
@@ -75,31 +73,49 @@ class GuiNewMissionDialog(QDialog, Ui_dialog_NewMission):
         """
         QDialog.__init__(self, parent)
         self.setupUi(self)
-        self.clients = []
 
     def on_buttonBox_NewMission_accepted(self):
         """
         Url confirm. start client.
         """
+        global client_subprocess,cv,thread_id
         subp = subprocess.Popen(('./client.py',self.lineEdit_url.text()),stdout=subprocess.PIPE)
         cv.acquire()
         client_subprocess.append(subp) # todo
         cv.release()
         ui.tableWidget.insertRow(0)
-        thread_RefreshGui_instance = Thread_RefreshGui(subp)
+        thread_RefreshGui_instance = Thread_RefreshGui(subp,thread_id)
         thread_RefreshGui_instance.start()
+        cv.acquire()
+        thread_id += 1
+        cv.release()
 
 class Thread_RefreshGui(threading.Thread):
     """
     Thread of refreshing GUI, listen the output of the CLI command.
     """
     
-    def __init__(self,client ):
+    def __init__(self,client,client_id = 0):
         """Constructor
         """
         threading.Thread.__init__(self)
         self.client = client
-
+        self.client_id = client_id
+        
+        self.item_file_name = PyQt4.QtGui.QTableWidgetItem()
+        self.item_file_size = PyQt4.QtGui.QTableWidgetItem()
+        self.item_completed = PyQt4.QtGui.QTableWidgetItem()
+        self.item_percentage = PyQt4.QtGui.QTableWidgetItem()
+        self.item_speed = PyQt4.QtGui.QTableWidgetItem()
+        self.item_number_of_nodes = PyQt4.QtGui.QTableWidgetItem()
+        
+        ui.tableWidget.setItem(self.client_id,0,self.item_file_name)
+        ui.tableWidget.setItem(self.client_id,1,self.item_file_size)
+        ui.tableWidget.setItem(self.client_id,2,self.item_completed)
+        ui.tableWidget.setItem(self.client_id,3,self.item_percentage)
+        ui.tableWidget.setItem(self.client_id,4,self.item_speed)
+        ui.tableWidget.setItem(self.client_id,5,self.item_number_of_nodes)
+        
     def run(self):
         """the run method of Thread_RefreshGui class.
         """
@@ -116,9 +132,7 @@ class Thread_RefreshGui(threading.Thread):
         Arguments:
         - `list`:
         """
-        item = PyQt4.QtGui.QTableWidgetItem()
-        item.setText(list[2])
-        ui.tableWidget.setItem(0,0,item)
+        self.item_file_name.setText(list[2])
 
     def BlockSize_parser(self,list):
         """
@@ -129,7 +143,6 @@ class Thread_RefreshGui(threading.Thread):
         """
         self.block_size = int(list[2])
         self.completed_block = 0
-        self.time = time.time()
             
     def FileSize_parser(self,list):
         """
@@ -138,11 +151,10 @@ class Thread_RefreshGui(threading.Thread):
         - `self`:
         - `list`:
         """
-        item = PyQt4.QtGui.QTableWidgetItem()
         self.file_size = list[2].strip()[:-2]
         print self.file_size
-        item.setText(self.nomalize_size(self.file_size))
-        ui.tableWidget.setItem(0,1,item)
+        self.item_file_size.setText(self.nomalize_size(self.file_size))
+        self.time = time.time()
 
     def Completed_parser(self,list):
         """
@@ -151,23 +163,24 @@ class Thread_RefreshGui(threading.Thread):
         - `self`:
         - `list`:
         """
-        item = PyQt4.QtGui.QTableWidgetItem()
-        item2 = PyQt4.QtGui.QTableWidgetItem()
-        item3 = PyQt4.QtGui.QTableWidgetItem()
         completed = list[2].split('/')[0]
-        item.setText(self.nomalize_size(completed))
-        ui.tableWidget.setItem(0,2,item)
+        self.item_completed.setText(self.nomalize_size(completed))
+        
         percentage = float(completed)/float(self.file_size)*100
-        item2.setText('%d%%'%percentage)
-        ui.tableWidget.setItem(0,3,item2)
+        self.item_percentage.setText('%d%%'%percentage)
+        
         self.completed_block += 1
         if self.completed_block == CALC_SPEED_PER_X_BLOCK:
             new_time = time.time()
             speed = self.block_size * CALC_SPEED_PER_X_BLOCK / (new_time - self.time) / 1024
-            item3.setText('%d kB/s'%speed)
-            ui.tableWidget.setItem(0,5,item3)
+            self.item_speed.setText('%d kB/s'%speed)
             self.time = new_time
             completed_block = 0
+
+    def LinkedNodes_parser(self,list):
+        """parser of LinkedNodes
+        """
+        self.item_number_of_nodes.setText(list[2])
                 
     def nomalize_size(self,size):
         """
@@ -188,10 +201,10 @@ class Thread_RefreshGui(threading.Thread):
                 return size+'kB'
 
 if __name__ == "__main__":
-    global cv
+    global cv,thread_id,client_subprocess
     client_subprocess = []
     cv = threading.Condition()
-
+    thread_id = 0
     app = PyQt4.QtGui.QApplication(sys.argv)
     ui = GuiMain()
     ui.show()
