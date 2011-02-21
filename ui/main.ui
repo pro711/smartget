@@ -62,12 +62,12 @@
         </column>
         <column>
          <property name="text">
-          <string>节点</string>
+          <string>速度</string>
          </property>
         </column>
         <column>
          <property name="text">
-          <string>速度</string>
+          <string>节点数</string>
          </property>
         </column>
        </widget>
