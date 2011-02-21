@@ -49,25 +49,40 @@
          <property name="text">
           <string>大小</string>
          </property>
+         <property name="textAlignment">
+          <set>AlignRight|AlignVCenter</set>
+         </property>
         </column>
         <column>
          <property name="text">
           <string>已完成</string>
+         </property>
+         <property name="textAlignment">
+          <set>AlignRight|AlignVCenter</set>
          </property>
         </column>
         <column>
          <property name="text">
           <string>%</string>
          </property>
+         <property name="textAlignment">
+          <set>AlignRight|AlignVCenter</set>
+         </property>
         </column>
         <column>
          <property name="text">
           <string>速度</string>
          </property>
+         <property name="textAlignment">
+          <set>AlignRight|AlignVCenter</set>
+         </property>
         </column>
         <column>
          <property name="text">
           <string>节点数</string>
+         </property>
+         <property name="textAlignment">
+          <set>AlignRight|AlignVCenter</set>
          </property>
         </column>
        </widget>

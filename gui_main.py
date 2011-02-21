@@ -22,7 +22,7 @@ Module implementing gui_main.
 CALC_SPEED_PER_X_BLOCK = 10
 
 from PyQt4.QtGui import QMainWindow,QDialog
-from PyQt4.QtCore import pyqtSignature
+from PyQt4.QtCore import pyqtSignature,Qt
 import PyQt4
 from ui.Ui_main import Ui_MainWindow
 from ui.dialog_newmission import Ui_dialog_NewMission
@@ -41,7 +41,15 @@ class GuiMain(QMainWindow, Ui_MainWindow):
         self.new_mission = GuiNewMissionDialog()
         QMainWindow.__init__(self, parent)
         self.setupUi(self)
-    
+        self.tableWidget.setSortingEnabled(True)
+        
+        self.tableWidget.setColumnWidth(0,250)
+        self.tableWidget.setColumnWidth(1,50)
+        self.tableWidget.setColumnWidth(2,50)
+        self.tableWidget.setColumnWidth(3,50)
+        self.tableWidget.setColumnWidth(4,50)
+        self.tableWidget.setColumnWidth(5,50)
+
     @pyqtSignature("")
     def on_startDaemon_clicked(self):
         """
@@ -78,29 +86,31 @@ class GuiNewMissionDialog(QDialog, Ui_dialog_NewMission):
         """
         Url confirm. start client.
         """
-        global client_subprocess,cv,thread_id
+        global client_subprocess,cv,thread_id,lock_sort
         subp = subprocess.Popen(('./client.py',self.lineEdit_url.text()),stdout=subprocess.PIPE)
         cv.acquire()
         client_subprocess.append(subp) # todo
         cv.release()
-        ui.tableWidget.insertRow(0)
-        thread_RefreshGui_instance = Thread_RefreshGui(subp,thread_id)
+        lock_sort.acquire()
+        ui.tableWidget.setSortingEnabled(False)
+        
+        row_number = ui.tableWidget.rowCount()
+        ui.tableWidget.insertRow(row_number)
+        thread_RefreshGui_instance = Thread_RefreshGui(subp,row_number)
         thread_RefreshGui_instance.start()
-        cv.acquire()
-        thread_id += 1
-        cv.release()
 
 class Thread_RefreshGui(threading.Thread):
     """
     Thread of refreshing GUI, listen the output of the CLI command.
     """
     
-    def __init__(self,client,client_id = 0):
+    def __init__(self,client,row_number):
         """Constructor
         """
+        global lock_sort
         threading.Thread.__init__(self)
         self.client = client
-        self.client_id = client_id
+        self.row_number = row_number
         
         self.item_file_name = PyQt4.QtGui.QTableWidgetItem()
         self.item_file_size = PyQt4.QtGui.QTableWidgetItem()
@@ -108,13 +118,22 @@ class Thread_RefreshGui(threading.Thread):
         self.item_percentage = PyQt4.QtGui.QTableWidgetItem()
         self.item_speed = PyQt4.QtGui.QTableWidgetItem()
         self.item_number_of_nodes = PyQt4.QtGui.QTableWidgetItem()
-        
-        ui.tableWidget.setItem(self.client_id,0,self.item_file_name)
-        ui.tableWidget.setItem(self.client_id,1,self.item_file_size)
-        ui.tableWidget.setItem(self.client_id,2,self.item_completed)
-        ui.tableWidget.setItem(self.client_id,3,self.item_percentage)
-        ui.tableWidget.setItem(self.client_id,4,self.item_speed)
-        ui.tableWidget.setItem(self.client_id,5,self.item_number_of_nodes)
+
+        self.item_file_size.setTextAlignment(Qt.AlignRight|Qt.AlignVCenter)
+        self.item_completed.setTextAlignment(Qt.AlignRight|Qt.AlignVCenter)
+        self.item_percentage.setTextAlignment(Qt.AlignRight|Qt.AlignVCenter)
+        self.item_speed.setTextAlignment(Qt.AlignRight|Qt.AlignVCenter)
+        self.item_number_of_nodes.setTextAlignment(Qt.AlignRight|Qt.AlignVCenter)
+
+        ui.tableWidget.setItem(self.row_number,0,self.item_file_name)
+        ui.tableWidget.setItem(self.row_number,1,self.item_file_size)
+        ui.tableWidget.setItem(self.row_number,2,self.item_completed)
+        ui.tableWidget.setItem(self.row_number,3,self.item_percentage)
+        ui.tableWidget.setItem(self.row_number,4,self.item_speed)
+        ui.tableWidget.setItem(self.row_number,5,self.item_number_of_nodes)
+
+        ui.tableWidget.setSortingEnabled(True)
+        lock_sort.release()
         
     def run(self):
         """the run method of Thread_RefreshGui class.
@@ -173,9 +192,9 @@ class Thread_RefreshGui(threading.Thread):
         if self.completed_block == CALC_SPEED_PER_X_BLOCK:
             new_time = time.time()
             speed = self.block_size * CALC_SPEED_PER_X_BLOCK / (new_time - self.time) / 1024
-            self.item_speed.setText('%d kB/s'%speed)
+            self.item_speed.setText('%dkB/s'%speed)
             self.time = new_time
-            completed_block = 0
+            self.completed_block = 0
 
     def LinkedNodes_parser(self,list):
         """parser of LinkedNodes
@@ -201,9 +220,10 @@ class Thread_RefreshGui(threading.Thread):
                 return size+'kB'
 
 if __name__ == "__main__":
-    global cv,thread_id,client_subprocess
+    global cv,thread_id,client_subprocess,lock_sort
     client_subprocess = []
     cv = threading.Condition()
+    lock_sort = threading.Lock()
     thread_id = 0
     app = PyQt4.QtGui.QApplication(sys.argv)
     ui = GuiMain()
