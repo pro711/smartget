@@ -48,6 +48,7 @@ def downloadBlock(url,start,end,thread_id):
         
         request = url + '\n' + str(start) + '\n' + str(end)
         print request
+        sys.stdout.flush()
         
         s.send(request)
 
@@ -62,6 +63,7 @@ def downloadBlock(url,start,end,thread_id):
         lock.acquire()
         fp.seek(start,os.SEEK_SET)
         print 'writing' + str(len(buffer))
+        sys.stdout.flush()
         fp.write(buffer)
         lock.release()
     except socket.timeout:
@@ -133,7 +135,8 @@ def downloadFile(url):
     global block_list
 
     url,dest = urlparser.UrlParser().parse(url)
-    print 'Info: File name: '+dest
+    print 'Info: FileName: '+dest
+
     if url.__class__==[].__class__:
         file_size = [getUrlFileSize(i)  for i in url]
         for i in file_size[1:]:
@@ -143,7 +146,9 @@ def downloadFile(url):
         file_size = file_size[0]
     else:
         file_size = getUrlFileSize(url)
-        
+
+    print 'Info: FileSize: %dkB'%(file_size/1024)
+    sys.stdout.flush()
     splitFile(file_size)
 
     try:
