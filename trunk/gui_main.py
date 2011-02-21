@@ -80,46 +80,84 @@ class GuiNewMissionDialog(QDialog, Ui_dialog_NewMission):
         """
         Url confirm. start client.
         """
+        subp = subprocess.Popen(('./client.py',self.lineEdit_url.text()),stdout=subprocess.PIPE)
         cv.acquire()
-        client_subprocess.append(subprocess.Popen(('./client.py',self.lineEdit_url.text()),stdout=subprocess.PIPE)) # todo
+        client_subprocess.append(subp) # todo
         cv.release()
         ui.tableWidget.insertRow(0)
+        thread_RefreshGui_instance = Thread_RefreshGui(subp)
+        thread_RefreshGui_instance.start()
 
 class Thread_RefreshGui(threading.Thread):
     """
     Thread of refreshing GUI, listen the output of the CLI command.
     """
-    global client_subprocess,cv
     
-    def __init__(self ):
+    def __init__(self,client ):
         """Constructor
         """
         threading.Thread.__init__(self)
+        self.client = client
 
     def run(self):
         """the run method of Thread_RefreshGui class.
         """
-        while True:
-            cv.acquire()
-            client_output_list = [i.stdout.readline() for i in client_subprocess] # todo
-            cv.release()
-            for i in client_output_list:
-                print i
-                if i.startswith('Info'):
-                    print 'starts with Info'
-                    i_list = i.split(': ')
-                    if i_list[1] == 'File name':
-                        print 'i_list[1] == File Name'
-                        item = PyQt4.QtGui.QTableWidgetItem()
-                        item.setText(i_list[2])
-                        ui.tableWidget.setItem(0,0,item)
-            time.sleep(1)
+        while self.client.poll() == None:
+            data = self.client.stdout.readline()
+            print data
+            if data.startswith('Info'):
+                data_list = data.split(': ')
+                getattr(self,data_list[1]+'_parser')(data_list)
+            # cv.acquire()
+            # client_output_list = []
+            # client_output_list = [i.stdout.readline() for i in client_subprocess] # todo
+            # for i in client_subprocess:
+            #     data = i.stdout.readline()
+            #     while data:
+            #         client_output_list.append([])
+            #         client_output_list[i].append(data)
+            #         data = i.stdout.readline()
+            # cv.release()
+            # for i in client_output_list:
+            #     print i
+            #     for j in i:
+            #         if i.startswith('Info'):
+            #             print 'starts with Info'
+            #             j_list = j.split(': ')
+            #             if j_list[1] == 'File name':
+            #                 print 'j_list[1] == File Name'
+            #                 item = PyQt4.QtGui.QTableWidgetItem()
+            #                 item.setText(j_list[2])
+            #                 ui.tableWidget.setItem(0,0,item)
+            # time.sleep(1)
+
+    def FileName_parser(self,list):
+        """
+        parser of FileName
+        Arguments:
+        - `list`:
+        """
+        item = PyQt4.QtGui.QTableWidgetItem()
+        item.setText(list[2])
+        ui.tableWidget.setItem(0,0,item)
+            
+    def FileSize_parser(self,list):
+        """
+        parser of FileSize
+        Arguments:
+        - `self`:
+        - `list`:
+        """
+        item = PyQt4.QtGui.QTableWidgetItem()
+        item.setText(list[2])
+        ui.tableWidget.setItem(0,1,item)
+
 
 if __name__ == "__main__":
-    global client_subprocess,cv
+    global cv
     client_subprocess = []
     cv = threading.Condition()
-    Thread_RefreshGui().start()
+
     app = PyQt4.QtGui.QApplication(sys.argv)
     ui = GuiMain()
     ui.show()
