@@ -68,6 +68,20 @@ class GuiMain(QMainWindow, Ui_MainWindow):
         """
         self.new_mission.setVisible(True)
 
+    def on_endMission_clicked(self):
+        """
+        End mission or remove finished row.
+        """
+        global cv,client_subprocess
+        for item in ui.tableWidget.selectedItems():
+            file_name = item.text()
+            row = item.row()
+            for k,v in client_subprocess.iteritems():
+                if v == file_name and k.poll()==None:
+                    k.terminate()
+                    break
+            ui.tableWidget.removeRow(row)
+
     def closeEvent(self,event):
         """
         Reloaded close Event
@@ -78,14 +92,14 @@ class GuiMain(QMainWindow, Ui_MainWindow):
         """
         global client_subprocess,cv
         cv.acquire()
-        poll_list = [i.poll() for i in client_subprocess.keys()]
+        poll_list = [i.poll() for i in client_subprocess.iterkeys()]
         cv.release()
         if None in poll_list:
             reply = PyQt4.QtGui.QMessageBox.question(self, 'Message', \
                                                      u'还有下载进程运行，确定要退出吗？',\
                                                      PyQt4.QtGui.QMessageBox.Yes, PyQt4.QtGui.QMessageBox.No)
             if reply == PyQt4.QtGui.QMessageBox.Yes:
-                [i.terminate() for i in client_subprocess.keys()]
+                [i.terminate() for i in client_subprocess.iterkeys()]
                 event.accept()
             else:
                 event.ignore()
@@ -122,6 +136,7 @@ class GuiNewMissionDialog(QDialog, Ui_dialog_NewMission):
         ui.tableWidget.insertRow(row_number)
         thread_RefreshGui_instance = Thread_RefreshGui(subp,row_number)
         thread_RefreshGui_instance.start()
+        self.lineEdit_url.setText('')
 
 class Thread_RefreshGui(threading.Thread):
     """
@@ -188,6 +203,12 @@ class Thread_RefreshGui(threading.Thread):
         global cv,client_subprocess
         self.item_file_name.setText(list[2])
         cv.acquire()
+        if list[2] in client_subprocess.itervalues():
+            self.client.terminate()
+            del client_subprocess[self.client]
+            ui.tableWidget.removeRow(item_file_name.row())
+            cv.release()
+            return
         client_subprocess[self.client] = list[2]
         cv.release()
 
