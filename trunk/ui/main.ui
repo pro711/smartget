@@ -30,6 +30,13 @@
          </widget>
         </item>
         <item>
+         <widget class="QPushButton" name="endMission">
+          <property name="text">
+           <string>结束任务</string>
+          </property>
+         </widget>
+        </item>
+        <item>
          <widget class="QPushButton" name="startDaemon">
           <property name="text">
            <string>开启Daemon</string>
