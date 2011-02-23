@@ -46,9 +46,9 @@ class GuiMain(QMainWindow, Ui_MainWindow):
         self.tableWidget.setColumnWidth(0,250)
         self.tableWidget.setColumnWidth(1,50)
         self.tableWidget.setColumnWidth(2,50)
-        self.tableWidget.setColumnWidth(3,50)
-        self.tableWidget.setColumnWidth(4,50)
-        self.tableWidget.setColumnWidth(5,50)
+        self.tableWidget.setColumnWidth(3,35)
+        self.tableWidget.setColumnWidth(4,70)
+        self.tableWidget.setColumnWidth(5,45)
 
     @pyqtSignature("")
     def on_startDaemon_clicked(self):
@@ -68,6 +68,30 @@ class GuiMain(QMainWindow, Ui_MainWindow):
         """
         self.new_mission.setVisible(True)
 
+    def closeEvent(self,event):
+        """
+        Reloaded close Event
+        close all the subprocessed we created.
+        Arguments:
+        - `self`:
+        - `event`:
+        """
+        global client_subprocess,cv
+        cv.acquire()
+        poll_list = [i.poll() for i in client_subprocess.keys()]
+        cv.release()
+        if None in poll_list:
+            reply = PyQt4.QtGui.QMessageBox.question(self, 'Message', \
+                                                     u'还有下载进程运行，确定要退出吗？',\
+                                                     PyQt4.QtGui.QMessageBox.Yes, PyQt4.QtGui.QMessageBox.No)
+            if reply == PyQt4.QtGui.QMessageBox.Yes:
+                [i.terminate() for i in client_subprocess.keys()]
+                event.accept()
+            else:
+                event.ignore()
+        else:
+            event.accept()
+
 class GuiNewMissionDialog(QDialog, Ui_dialog_NewMission):
     """
     A dialog box, to read url
@@ -86,10 +110,10 @@ class GuiNewMissionDialog(QDialog, Ui_dialog_NewMission):
         """
         Url confirm. start client.
         """
-        global client_subprocess,cv,thread_id,lock_sort
+        global client_subprocess,cv,lock_sort
         subp = subprocess.Popen(('./client.py',self.lineEdit_url.text()),stdout=subprocess.PIPE)
         cv.acquire()
-        client_subprocess.append(subp) # todo
+        client_subprocess[subp] = '' # todo
         cv.release()
         lock_sort.acquire()
         ui.tableWidget.setSortingEnabled(False)
@@ -125,6 +149,13 @@ class Thread_RefreshGui(threading.Thread):
         self.item_speed.setTextAlignment(Qt.AlignRight|Qt.AlignVCenter)
         self.item_number_of_nodes.setTextAlignment(Qt.AlignRight|Qt.AlignVCenter)
 
+        self.item_file_name.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+        self.item_file_size.setFlags(Qt.NoItemFlags|Qt.ItemIsEnabled)
+        self.item_completed.setFlags(Qt.NoItemFlags|Qt.ItemIsEnabled)
+        self.item_percentage.setFlags(Qt.NoItemFlags|Qt.ItemIsEnabled)
+        self.item_speed.setFlags(Qt.NoItemFlags|Qt.ItemIsEnabled)
+        self.item_number_of_nodes.setFlags(Qt.NoItemFlags|Qt.ItemIsEnabled)
+        
         ui.tableWidget.setItem(self.row_number,0,self.item_file_name)
         ui.tableWidget.setItem(self.row_number,1,self.item_file_size)
         ui.tableWidget.setItem(self.row_number,2,self.item_completed)
@@ -139,7 +170,10 @@ class Thread_RefreshGui(threading.Thread):
         """the run method of Thread_RefreshGui class.
         """
         while self.client.poll() == None:
+            print self.client.poll()
             data = self.client.stdout.readline()
+            if not data:
+                time.sleep(1)
             print data
             if data.startswith('Info'):
                 data_list = data.split(': ')
@@ -151,7 +185,11 @@ class Thread_RefreshGui(threading.Thread):
         Arguments:
         - `list`:
         """
+        global cv,client_subprocess
         self.item_file_name.setText(list[2])
+        cv.acquire()
+        client_subprocess[self.client] = list[2]
+        cv.release()
 
     def BlockSize_parser(self,list):
         """
@@ -200,6 +238,17 @@ class Thread_RefreshGui(threading.Thread):
         """parser of LinkedNodes
         """
         self.item_number_of_nodes.setText(list[2])
+
+    def Finish_parser(self,list):
+        """
+        parser of Finish and average speed
+        Arguments:
+        - `self`:
+        - `list`:
+        """
+        avs = list[2][6:] + u'平均'
+        self.item_speed.setText(avs)
+
                 
     def nomalize_size(self,size):
         """
@@ -220,11 +269,10 @@ class Thread_RefreshGui(threading.Thread):
                 return size+'kB'
 
 if __name__ == "__main__":
-    global cv,thread_id,client_subprocess,lock_sort
-    client_subprocess = []
+    global cv,client_subprocess,lock_sort
+    client_subprocess = {}
     cv = threading.Condition()
     lock_sort = threading.Lock()
-    thread_id = 0
     app = PyQt4.QtGui.QApplication(sys.argv)
     ui = GuiMain()
     ui.show()

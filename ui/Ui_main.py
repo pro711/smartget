@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'main.ui'
 #
-# Created: Mon Feb 21 22:04:09 2011
+# Created: Wed Feb 23 18:22:18 2011
 #      by: PyQt4 UI code generator 4.7.3
 #
 # WARNING! All changes made in this file will be lost!
@@ -25,6 +25,9 @@ class Ui_MainWindow(object):
         self.newMission = QtGui.QPushButton(self.centralwidget)
         self.newMission.setObjectName("newMission")
         self.horizontalLayout.addWidget(self.newMission)
+        self.endMission = QtGui.QPushButton(self.centralwidget)
+        self.endMission.setObjectName("endMission")
+        self.horizontalLayout.addWidget(self.endMission)
         self.startDaemon = QtGui.QPushButton(self.centralwidget)
         self.startDaemon.setObjectName("startDaemon")
         self.horizontalLayout.addWidget(self.startDaemon)
@@ -74,6 +77,7 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QtGui.QApplication.translate("MainWindow", "SmartGet", None, QtGui.QApplication.UnicodeUTF8))
         self.newMission.setText(QtGui.QApplication.translate("MainWindow", "新任务", None, QtGui.QApplication.UnicodeUTF8))
+        self.endMission.setText(QtGui.QApplication.translate("MainWindow", "结束任务", None, QtGui.QApplication.UnicodeUTF8))
         self.startDaemon.setText(QtGui.QApplication.translate("MainWindow", "开启Daemon", None, QtGui.QApplication.UnicodeUTF8))
         self.tableWidget.horizontalHeaderItem(0).setText(QtGui.QApplication.translate("MainWindow", "文件名", None, QtGui.QApplication.UnicodeUTF8))
         self.tableWidget.horizontalHeaderItem(1).setText(QtGui.QApplication.translate("MainWindow", "大小", None, QtGui.QApplication.UnicodeUTF8))

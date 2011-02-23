@@ -67,7 +67,7 @@ def downloadBlock(url,start,end,thread_id):
         lock.acquire()
         fp.seek(start,os.SEEK_SET)
         fp.write(buffer)
-        total_completed += BLOCK_SIZE
+        total_completed += complete
         lock.release()
         print 'Info: Completed: %d/%dkB'%(total_completed/1024,file_size/1024)
         lock_nodes.acquire()
@@ -189,7 +189,7 @@ def downloadFile(url):
     for thread in thread_download_list:
         thread.join()
     fp.close()
-    print 'download succeeded, AVS = %d kB/s'%(file_size/1024/(time.time()-time_start))
+    print 'Info: Finish: AVS = %d kB/s'%(file_size/1024/(time.time()-time_start))
 
 if __name__ == '__main__':
 #    socket.setdefaulttimeout(5)
