@@ -146,6 +146,9 @@ def downloadFile(url):
 
     url,dest = urlparser.UrlParser().parse(url)
 
+    while os.path.exists(dest):
+        dest = dest + '~'
+
     if url.__class__==[].__class__:
         file_size = [getUrlFileSize(i)  for i in url]
         for i in file_size[1:]:
