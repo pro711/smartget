@@ -40,6 +40,7 @@ class GuiMain(QMainWindow, Ui_MainWindow):
         """
         self.new_mission = GuiNewMissionDialog()
         QMainWindow.__init__(self, parent)
+        self.setAcceptDrops(True)
         self.setupUi(self)
         self.tableWidget.setSortingEnabled(True)
         
@@ -106,6 +107,17 @@ class GuiMain(QMainWindow, Ui_MainWindow):
         else:
             event.accept()
 
+    def dragEnterEvent(self, e):
+        if e.mimeData().hasFormat('text/plain'):
+            e.accept()
+        else:
+            e.ignore()
+
+    def dropEvent(self, e):
+        url = e.mimeData().text()
+        self.new_mission.on_buttonBox_NewMission_accepted(url)
+
+
 class GuiNewMissionDialog(QDialog, Ui_dialog_NewMission):
     """
     A dialog box, to read url
@@ -120,12 +132,12 @@ class GuiNewMissionDialog(QDialog, Ui_dialog_NewMission):
         QDialog.__init__(self, parent)
         self.setupUi(self)
 
-    def on_buttonBox_NewMission_accepted(self):
+    def on_buttonBox_NewMission_accepted(self,url = None):
         """
         Url confirm. start client.
         """
         global client_subprocess,cv,lock_sort
-        subp = subprocess.Popen(('./client.py',self.lineEdit_url.text()),stdout=subprocess.PIPE)
+        subp = subprocess.Popen(('./client.py',url or self.lineEdit_url.text()),stdout=subprocess.PIPE)
         cv.acquire()
         client_subprocess[subp] = '' # todo
         cv.release()
