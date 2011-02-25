@@ -110,18 +110,3 @@ class RegisterError(Exception):
     """Register Error
     """
     pass
-    # def __init__(self):
-    #     """
-        
-    #     Arguments:
-    #     - `value`:
-    #     """
-    #     pass
-    # def __str__(self):
-    #     """
-        
-    #     Arguments:
-    #     - `self`:
-    #     """
-    #     return
-
