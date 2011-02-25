@@ -28,7 +28,7 @@ import os
 from download import MyURLopener
 import threading
 import time
-from protocol import SmartGetProtocol
+from protocol import SmartGetProtocol,RegisterError
 
 def thread_send(client,thread_id):
     """
@@ -124,7 +124,11 @@ def main():
 
     datahub_protocol_handler = SmartGetProtocol(DATAHUB,PORT)
 
-    datahub_protocol_handler.register()
+    try:
+        datahub_protocol_handler.register()
+    except RegisterError:
+        datahub_protocol_handler.deregister()
+        datahub_protocol_handler.register()
 
     datahub_protocol_handler.setstatus(status)
         
