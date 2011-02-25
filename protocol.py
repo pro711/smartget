@@ -66,6 +66,7 @@ class SmartGetProtocol():
             return self.node_id
         else:
             print 'register error! '+ datahub_message_list[1]
+            raise RegisterError
     
     def setstatus(self,status):
         """set status of the node
@@ -104,4 +105,23 @@ class SmartGetProtocol():
             return node_list
         else:
             print 'Request nodes error!'
+
+class RegisterError(Exception):
+    """Register Error
+    """
+    pass
+    # def __init__(self):
+    #     """
+        
+    #     Arguments:
+    #     - `value`:
+    #     """
+    #     pass
+    # def __str__(self):
+    #     """
+        
+    #     Arguments:
+    #     - `self`:
+    #     """
+    #     return
 
