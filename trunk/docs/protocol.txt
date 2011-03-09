@@ -1,0 +1,153 @@
+~~~~~~~~~~~~~
+SmartGet 文档
+~~~~~~~~~~~~~
+
+通讯协议模块
+============
+
+功能概述
+--------
+通讯协议模块完成了对 SmartGet 节点和服务器通讯协议的封装。实现了以下功能：
+
+  - 节点注册
+  - 节点注销
+  - 节点设置状态
+  - 申请可用节点
+
+
+protocol.py
+-----------
+
+NAME
+    protocol
+
+FILE
+    protocol.py
+
+DESCRIPTION
+    # -*- coding: utf-8 -*-
+    #
+    #       protocol.py
+    #       
+    #   This program is free software: you can redistribute it and/or modify
+    #   it under the terms of the GNU General Public License as published by
+    #   the Free Software Foundation, either version 3 of the License, or
+    #   (at your option) any later version.
+    #
+    #   This program is distributed in the hope that it will be useful,
+    #   but WITHOUT ANY WARRANTY; without even the implied warranty of
+    #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    #   GNU General Public License for more details.
+    #
+    #   You should have received a copy of the GNU General Public License
+    #   along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+CLASSES
+    exceptions.Exception(exceptions.BaseException)
+        RegisterError
+    SmartGetProtocol
+    
+    class RegisterError(exceptions.Exception)
+     |  Register Error
+     |  
+     |  Method resolution order:
+     |      RegisterError
+     |      exceptions.Exception
+     |      exceptions.BaseException
+     |      __builtin__.object
+     |  
+     |  Data descriptors defined here:
+     |  
+     |  __weakref__
+     |      list of weak references to the object (if defined)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from exceptions.Exception:
+     |  
+     |  __init__(...)
+     |      x.__init__(...) initializes x; see x.__class__.__doc__ for signature
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes inherited from exceptions.Exception:
+     |  
+     |  __new__ = <built-in method __new__ of type object>
+     |      T.__new__(S, ...) -> a new object with type S, a subtype of T
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from exceptions.BaseException:
+     |  
+     |  __delattr__(...)
+     |      x.__delattr__('name') <==> del x.name
+     |  
+     |  __getattribute__(...)
+     |      x.__getattribute__('name') <==> x.name
+     |  
+     |  __getitem__(...)
+     |      x.__getitem__(y) <==> x[y]
+     |  
+     |  __getslice__(...)
+     |      x.__getslice__(i, j) <==> x[i:j]
+     |      
+     |      Use of negative indices is not supported.
+     |  
+     |  __reduce__(...)
+     |  
+     |  __repr__(...)
+     |      x.__repr__() <==> repr(x)
+     |  
+     |  __setattr__(...)
+     |      x.__setattr__('name', value) <==> x.name = value
+     |  
+     |  __setstate__(...)
+     |  
+     |  __str__(...)
+     |      x.__str__() <==> str(x)
+     |  
+     |  __unicode__(...)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data descriptors inherited from exceptions.BaseException:
+     |  
+     |  __dict__
+     |  
+     |  args
+     |  
+     |  message
+    
+    class SmartGetProtocol
+     |  SmartGet protocol To communicate with server
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self, datahub, port=0)
+     |      Initialize
+     |      Arguments:
+     |      - `datahubn`:
+     |  
+     |  connect(self)
+     |      Connect
+     |  
+     |  deregister(self)
+     |      Deregister
+     |      
+     |      Arguments:
+     |      - `self`:
+     |  
+     |  register(self)
+     |      register the node as a daemon
+     |      
+     |      Arguments:
+     |  
+     |  requestnodes(self, n=1)
+     |      request nodes, default 1 node.
+     |      Return the list of (addr,port)
+     |      Arguments:
+     |      - `n`:
+     |  
+     |  setstatus(self, status)
+     |      set status of the node
+     |      
+     |      Arguments:
+     |      - `status`:status number
+
+
