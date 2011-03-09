@@ -19,10 +19,8 @@
 # receive file from serve and save as destination
 
 
-THREAD = 1
-HOST = '127.0.0.1'
-HOSTPORT = 1234
-BLOCK_SIZE = 1048576
+THREAD = 2
+BLOCK_SIZE = 262144
 DATAHUB = ('127.0.0.1',20110)
 
 
@@ -50,7 +48,12 @@ def downloadBlock(url,start,end,thread_id):
         nodes_linked += 1
         lock_nodes.release()
         
-        s.connect(node)
+        try:
+            s.connect(node)
+        except socket.error:
+            print 'Link node error!'
+            return
+            
         
         request = url + '\n' + str(start) + '\n' + str(end)
         
@@ -198,3 +201,5 @@ if __name__ == '__main__':
 #    socket.setdefaulttimeout(5)
     url = sys.argv[1]
     downloadFile(url)
+
+    

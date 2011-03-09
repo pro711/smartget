@@ -260,12 +260,16 @@ class Thread_RefreshGui(threading.Thread):
         self.item_percentage.setText('%d%%'%percentage)
         
         self.completed_block += 1
-        if self.completed_block == CALC_SPEED_PER_X_BLOCK:
+        if self.completed_block < CALC_SPEED_PER_X_BLOCK:
+            new_time =  time.time()
+            speed = self.block_size * CALC_SPEED_PER_X_BLOCK / (new_time - self.time) / 1024
+            self.item_speed.setText('%dkB/s'%speed)
+            
+        if (self.completed_block % CALC_SPEED_PER_X_BLOCK) == 0:
             new_time = time.time()
             speed = self.block_size * CALC_SPEED_PER_X_BLOCK / (new_time - self.time) / 1024
             self.item_speed.setText('%dkB/s'%speed)
             self.time = new_time
-            self.completed_block = 0
 
     def LinkedNodes_parser(self,list):
         """parser of LinkedNodes

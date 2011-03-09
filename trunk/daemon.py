@@ -17,11 +17,6 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>
 
 # run server, a file named source will be read and sent to client
-DOWNLOAD_BLOCK_SIZE = 262144
-HOSTNAME = '127.0.0.1'
-PORT = 1234
-DATAHUB = ('127.0.0.1',20110)
-THREAD = 1
 
 import socket
 import os
@@ -29,6 +24,12 @@ from download import MyURLopener
 import threading
 import time
 from protocol import SmartGetProtocol,RegisterError
+
+DOWNLOAD_BLOCK_SIZE = 262144
+HOSTNAME = ''
+PORT = 1234
+DATAHUB = ('127.0.0.1',20110)
+THREAD = 2
 
 def thread_send(client,thread_id):
     """
