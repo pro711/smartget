@@ -1,0 +1,157 @@
+~~~~~~~~~~~~~
+SmartGet 文档
+~~~~~~~~~~~~~
+
+文件下载模块
+============
+
+功能概述
+--------
+本模块完成了对于文件下载功能的封装，实现了以下功能：
+  - 根据 URL 自动选用对应的协议进行下载
+  - 可以指定下载文件的起始和结束位置
+  - 可以获取文件的大小
+
+
+download.py
+-----------
+
+NAME
+    download
+
+FILE
+    download.py
+
+CLASSES
+    urllib.FancyURLopener(urllib.URLopener)
+        MyURLopener
+    
+    class MyURLopener(urllib.FancyURLopener)
+     |  My URL opener, extends FancyURLOpener, to define my own
+     |  user-agents.
+     |  Example:
+     |  newopener = MyURLopener()
+     |  newopener.open(url,start,end)
+     |  newopener.sock.read(length)
+     |  newopener.sock.close()
+     |  
+     |  Method resolution order:
+     |      MyURLopener
+     |      urllib.FancyURLopener
+     |      urllib.URLopener
+     |  
+     |  Methods defined here:
+     |  
+     |  openurl(self, url, start='0', end='0')
+     |      download a url
+     |      
+     |      Arguments:
+     |      - `url`:
+     |      - `start`:
+     |      - `end`:
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from urllib.FancyURLopener:
+     |  
+     |  __init__(self, *args, **kwargs)
+     |  
+     |  get_user_passwd(self, host, realm, clear_cache=0)
+     |  
+     |  http_error_301(self, url, fp, errcode, errmsg, headers, data=None)
+     |      Error 301 -- also relocated (permanently).
+     |  
+     |  http_error_302(self, url, fp, errcode, errmsg, headers, data=None)
+     |      Error 302 -- relocated (temporarily).
+     |  
+     |  http_error_303(self, url, fp, errcode, errmsg, headers, data=None)
+     |      Error 303 -- also relocated (essentially identical to 302).
+     |  
+     |  http_error_307(self, url, fp, errcode, errmsg, headers, data=None)
+     |      Error 307 -- relocated, but turn POST into error.
+     |  
+     |  http_error_401(self, url, fp, errcode, errmsg, headers, data=None)
+     |      Error 401 -- authentication required.
+     |      This function supports Basic authentication only.
+     |  
+     |  http_error_407(self, url, fp, errcode, errmsg, headers, data=None)
+     |      Error 407 -- proxy authentication required.
+     |      This function supports Basic authentication only.
+     |  
+     |  http_error_default(self, url, fp, errcode, errmsg, headers)
+     |      Default error handling -- don't raise an exception.
+     |  
+     |  prompt_user_passwd(self, host, realm)
+     |      Override this in a GUI environment!
+     |  
+     |  redirect_internal(self, url, fp, errcode, errmsg, headers, data)
+     |  
+     |  retry_http_basic_auth(self, url, realm, data=None)
+     |  
+     |  retry_https_basic_auth(self, url, realm, data=None)
+     |  
+     |  retry_proxy_http_basic_auth(self, url, realm, data=None)
+     |  
+     |  retry_proxy_https_basic_auth(self, url, realm, data=None)
+     |  
+     |  ----------------------------------------------------------------------
+     |  Methods inherited from urllib.URLopener:
+     |  
+     |  __del__(self)
+     |  
+     |  addheader(self, *args)
+     |      Add a header to be used by the HTTP interface only
+     |      e.g. u.addheader('Accept', 'sound/basic')
+     |  
+     |  cleanup(self)
+     |  
+     |  close(self)
+     |  
+     |  http_error(self, url, fp, errcode, errmsg, headers, data=None)
+     |      Handle http errors.
+     |      Derived class can override this, or provide specific handlers
+     |      named http_error_DDD where DDD is the 3-digit error code.
+     |  
+     |  open(self, fullurl, data=None)
+     |      Use URLopener().open(file) instead of open(file, 'r').
+     |  
+     |  open_data(self, url, data=None)
+     |      Use "data" URL.
+     |  
+     |  open_file(self, url)
+     |      Use local file or FTP depending on form of URL.
+     |  
+     |  open_ftp(self, url)
+     |      Use FTP protocol.
+     |  
+     |  open_http(self, url, data=None)
+     |      Use HTTP protocol.
+     |  
+     |  open_https(self, url, data=None)
+     |      Use HTTPS protocol.
+     |  
+     |  open_local_file(self, url)
+     |      Use local file.
+     |  
+     |  open_unknown(self, fullurl, data=None)
+     |      Overridable interface to open unknown URL type.
+     |  
+     |  open_unknown_proxy(self, proxy, fullurl, data=None)
+     |      Overridable interface to open unknown URL type.
+     |  
+     |  retrieve(self, url, filename=None, reporthook=None, data=None)
+     |      retrieve(url) returns (filename, headers) for a local object
+     |      or (tempfilename, headers) for a remote object.
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes inherited from urllib.URLopener:
+     |  
+     |  version = 'Python-urllib/1.17'
+
+FUNCTIONS
+    GetUrlFileSize(url, proxies={})
+        Get the size of url.
+        Arguments:
+        - `url`:
+        - `proxies = {}`:
+
+

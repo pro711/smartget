@@ -1,0 +1,73 @@
+~~~~~~~~~~~~~
+SmartGet 文档
+~~~~~~~~~~~~~
+
+目标网页分析模块
+================
+
+功能概述
+--------
+本模块完成对目标网页的分析，提取所需要下载文件的不同的镜像地址。之后由不同的节点从不同的镜像地址下载文件的不同部分，最后再拼接起来，以充分利用带宽，实现更高的下载速度。
+
+
+技术实现
+--------
+本模块利用正则表达式，从预先定义的一些规则中匹配到对应的下载站点。然后利用 Python 的反射（Reflection）特性，动态地获取到对应网址的处理函数。这些处理函数完成对目标网页的分析，提取出各镜像的地址。
+
+
+urlparser.py
+------------
+
+NAME
+    urlparser
+
+FILE
+    /home/pro/Dev/python/smartget/urlparser.py
+
+DESCRIPTION
+    # -*- coding: utf-8 -*-
+    #
+    #       urlparser.py
+    #       
+    #   This program is free software: you can redistribute it and/or modify
+    #   it under the terms of the GNU General Public License as published by
+    #   the Free Software Foundation, either version 3 of the License, or
+    #   (at your option) any later version.
+    #
+    #   This program is distributed in the hope that it will be useful,
+    #   but WITHOUT ANY WARRANTY; without even the implied warranty of
+    #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    #   GNU General Public License for more details.
+    #
+    #   You should have received a copy of the GNU General Public License
+    #   along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+CLASSES
+    UrlParser
+    
+    class UrlParser
+     |  Parse url smartly
+     |  
+     |  Methods defined here:
+     |  
+     |  parse(self, url)
+     |      parse url into a more useful one
+     |  
+     |  u115_parser(self, url)
+     |      u115 parser
+     |      Arguments:
+     |      - `self`:
+     |      - `url`:
+     |  
+     |  xdowns_parser(self, url)
+     |      xdowns.com parser
+     |      Arguments:
+     |      - `self`:
+     |      - `urllib`:
+     |  
+     |  ----------------------------------------------------------------------
+     |  Data and other attributes defined here:
+     |  
+     |  keywords = {'u115': 'u.115.com', 'xdowns': 'http://www.xdowns.com/soft...
+
+
