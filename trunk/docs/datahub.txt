@@ -1,0 +1,197 @@
+~~~~~~~~~~~~~
+SmartGet 文档
+~~~~~~~~~~~~~
+
+中心服务器
+==========
+
+功能概述
+--------
+
+SmartGet 中心服务器（datahub）的作用是维护整个 SmartGet 网络内的可用节点。其主要功能如下：
+
+  - 负责节点的添加、删除、状态更新
+  - 接受客户端的请求，返回可用的节点列表
+
+
+通讯协议
+--------
+
+服务器和客户端的通信由客户端发给服务器的一些命令组成，命令由反引号（`）作为开始标志。格式为 `command [arguments]
+
+命令如下：
+
+`register port
+    客户端向服务器注册，port为客户端监听端口号。例如：
+        `register 1234
+    服务器响应
+        200 OK\r\n%d
+    第一行为状态表示，采用和HTTP类似的状态码，200为正常响应。
+    其中%d为服务器分配的客户端ID，为从1开始的正整数，以后客户端通过这个ID来标识自己。
+    如果出错，例如重复注册的情况，服务器返回
+    400 BAD REQUEST\r\nNode already exists!
+
+`deregister port
+    客户端向服务器取消注册，断开连接。
+    正常情况服务器返回
+        200 OK\r\n
+    如果出错，例如原来没有注册过，则服务器返回
+        404 NOT FOUND\r\n
+
+`requestnodes n
+    客户端向服务器请求n个可用节点，n为节点数。
+    例如
+        `requestnodes 5 1
+    请求5个空闲节点。
+    正常情况服务器返回
+        200 OK\r\n(%s %d\r\n)+，（这里+是正则表达式语法），其中%s为节点的IP，%d为端口
+    例如
+        200 OK\r\n192.168.0.1 1234\r\n192.168.0.2 1234\r\n192.168.0.3 1234\r\n
+    返回了三个节点
+
+
+`setstatus id status
+    更新客户端状态，id为客户端ID，状态为需要设置的状态编号，状态编号的含义为当前节点可以接受的连接数。例如客户端 1 通知 datahub 自己可以接受的连接数为 2 ：
+        `setstatus 1 2
+    正常返回
+        200 OK\r\n
+    异常返回
+        400 BAD REQUEST\r\n
+
+
+datahub.py
+----------
+
+NAME
+    datahub
+
+FILE
+    /home/pro/Dev/python/smartget/datahub.py
+
+DESCRIPTION
+    # -*- coding: utf-8 -*-
+    #
+    #       datahub.py
+    #       
+    #   This program is free software: you can redistribute it and/or modify
+    #   it under the terms of the GNU General Public License as published by
+    #   the Free Software Foundation, either version 3 of the License, or
+    #   (at your option) any later version.
+    #
+    #   This program is distributed in the hope that it will be useful,
+    #   but WITHOUT ANY WARRANTY; without even the implied warranty of
+    #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    #   GNU General Public License for more details.
+    #
+    #   You should have received a copy of the GNU General Public License
+    #   along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+CLASSES
+    AbstractDataHub
+        SmartgetDataHub
+    SmartgetDataHubDaemon
+    SmartgetNode
+    
+    class AbstractDataHub
+     |  Abstract data hub class for Smartget networks.
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self)
+     |      Class initialiser
+     |  
+     |  make_node(self, addr, port, name='')
+    
+    class SmartgetDataHub(AbstractDataHub)
+     |  Data hub class for Smartget networks.
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self)
+     |      Class initialiser
+     |  
+     |  add_node(self, node)
+     |  
+     |  decrease_node_status(self, node_id, n=1)
+     |  
+     |  get_available_node_ids(self)
+     |  
+     |  get_idle_node_ids(self)
+     |  
+     |  get_n_idle_nodes(self)
+     |  
+     |  get_node_by_id(self, node_id)
+     |  
+     |  get_node_ids_by_addr(self, addr)
+     |  
+     |  get_node_ids_by_addr_port(self, addr, port)
+     |  
+     |  get_node_ids_by_status(self, status)
+     |  
+     |  get_node_status(self, node_id)
+     |  
+     |  get_nodes(self)
+     |  
+     |  make_node(self, addr, port, name='')
+     |  
+     |  rm_node(self, node_id)
+     |  
+     |  set_node_status(self, node_id, status)
+    
+    class SmartgetDataHubDaemon
+     |  Data hub daemon class for Smartget networks.
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self, port)
+     |      Class initialiser
+     |  
+     |  listen(self, s)
+     |      Listen for incoming requests.
+     |  
+     |  process_end_download_request(self, conn, addr, request)
+     |      Process request to end a download.
+     |  
+     |  process_init_download_request(self, conn, addr, request)
+     |      Process request to initiate a download.
+     |  
+     |  process_node_reg_request(self, conn, addr, arg)
+     |      Register a new node on the network.
+     |  
+     |  process_node_rm_request(self, conn, addr, arg)
+     |      Remove an existing node from the network.
+     |  
+     |  process_req_nodes_request(self, conn, addr, arg)
+     |      Process request to request some available nodes.
+     |  
+     |  process_request(self, conn, addr, data)
+     |      Parse and dispatch requests.
+     |  
+     |  process_set_status_request(self, conn, addr, arg)
+     |      Process request to set the status of a node.
+     |  
+     |  run(self)
+     |      Start data hub daemon.
+     |  
+     |  thread_accept(self, conn, addr)
+     |      thread of accepting an incoming request.
+    
+    class SmartgetNode
+     |  A node in Smartget networks.
+     |  
+     |  Methods defined here:
+     |  
+     |  __init__(self, node_id, addr, port, name='')
+     |      Class initialiser 
+     |      node id:
+     |          0: data hub
+     |          1,2,3...: ordinary nodes
+     |      
+     |      node status:
+     |          0: not available
+     |          1,2,3...: number of availble connections
+     |          -1: zombie
+
+FUNCTIONS
+    main()
+
