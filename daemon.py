@@ -36,7 +36,7 @@ def thread_send(client,thread_id):
     thread of sending
 
     """
-    global fifo, lock, cv
+    global fifo, lock, cv, status
     global finished
 
     client.setblocking(1)
@@ -57,6 +57,10 @@ def thread_send(client,thread_id):
         except socket.error:
             print 'broken pipe'
             del(fifo[thread_id])
+            lock.acquire()
+            status += 1
+            datahub_protocol_handler.setstatus(status)
+            lock.release()
             return
     for i in fifo[thread_id]:
         lock.acquire()
@@ -66,6 +70,10 @@ def thread_send(client,thread_id):
             client.send(tosend)
         except socket.error:
             print 'broken pipe'
+            lock.acquire()
+            status += 1
+            datahub_protocol_handler.setstatus(status)
+            lock.release()
             break
     del(fifo[thread_id])
     
