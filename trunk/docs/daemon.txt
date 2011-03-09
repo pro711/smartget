@@ -1,0 +1,71 @@
+~~~~~~~~~~~~~
+SmartGet 文档
+~~~~~~~~~~~~~
+
+节点服务端守护进程
+==================
+
+功能概述
+--------
+每个节点由两部分构成：客户端（client）和服务端（daemon）。服务端的功能是接收网络中其它节点的请求，进行文件的下载，然后将下载得到的数据发送给发起请求节点。
+
+程序开始运行时，daemon 首先需要向 datahub 发送注册请求，并且通知 datahub 本节点可以接受的连接数。
+
+程序结束时，daemon 需要向 datahub 发送注销请求。
+
+
+技术实现
+--------
+服务端（daemon）是一个多线程服务器，可以同时接收多个请求，为多个 client 提供服务。
+
+在 datahub 端完成注册之后， daemon 进入 datahub 的可用节点列表中。此后 daemon 就开始监听输入请求。当网络中某个节点向 datahub 申请到可用节点后，向这些可用节点发起下载请求。daemon 在接收到请求后，会开启两个新线程，其中一个线程下载所请求的数据，另一个线程把下载的数据发送给 client。下面两个函数分别实现了两个线程：
+
+  - thread_accept
+        下载所请求的数据
+  - thread_send
+        发送下载的数据给 client
+
+
+daemon.py
+---------
+NAME
+    daemon
+
+FILE
+    daemon.py
+
+DESCRIPTION
+    # -*- coding: utf-8 -*-
+    #
+    #       daemon.py
+    #       
+    #   This program is free software: you can redistribute it and/or modify
+    #   it under the terms of the GNU General Public License as published by
+    #   the Free Software Foundation, either version 3 of the License, or
+    #   (at your option) any later version.
+    #
+    #   This program is distributed in the hope that it will be useful,
+    #   but WITHOUT ANY WARRANTY; without even the implied warranty of
+    #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    #   GNU General Public License for more details.
+    #
+    #   You should have received a copy of the GNU General Public License
+    #   along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+FUNCTIONS
+    main()
+    
+    thread_accept(c)
+        thread of accepting
+    
+    thread_send(client, thread_id)
+        thread of sending
+
+DATA
+    DATAHUB = ('127.0.0.1', 20110)
+    DOWNLOAD_BLOCK_SIZE = 262144
+    HOSTNAME = ''
+    PORT = 1234
+    THREAD = 2
+
+
