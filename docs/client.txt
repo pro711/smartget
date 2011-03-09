@@ -1,0 +1,82 @@
+~~~~~~~~~~~~~
+SmartGet 文档
+~~~~~~~~~~~~~
+
+客户端模块
+============
+
+功能概述
+--------
+SmartGet的客户端模块（client.py）可以通过服务器实现对指定URL进行下载。
+特点如下：
+  - 多机协作
+  - 分块下载
+  - 多线程下载
+基本过程如下：
+  - 以命令行形式被调用，须下载的URL以参数形式传入
+  - 解析URL
+  - 获取文件长度
+  - 将文件分块(如果需要的话)
+  - 依文件块数、最大线程数建立下载线程表。
+  - 执行下载线程
+	  - 寻找未完成的块
+	  - 依SmartGet协议向服务器申请空闲节点
+	  - 向申请到的节点发送下载请求
+	  - 从该节点获取下载好的数据块
+
+
+
+
+client.py
+-----------
+
+NAME
+    client
+
+FILE
+    /media/bigfile/______/a/smartget_svn/client.py
+
+DESCRIPTION
+    # -*- coding: utf-8 -*-
+    #
+    #       client.py
+    #       
+    #   This program is free software: you can redistribute it and/or modify
+    #   it under the terms of the GNU General Public License as published by
+    #   the Free Software Foundation, either version 3 of the License, or
+    #   (at your option) any later version.
+    #
+    #   This program is distributed in the hope that it will be useful,
+    #   but WITHOUT ANY WARRANTY; without even the implied warranty of
+    #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    #   GNU General Public License for more details.
+    #
+    #   You should have received a copy of the GNU General Public License
+    #   along with this program.  If not, see <http://www.gnu.org/licenses/>
+
+FUNCTIONS
+    downloadBlock(url, start, end, thread_id)
+        thread of downloading a block
+    
+    downloadFile(url)
+        request a download
+        Arguments:
+        - `url`: a string of url to download
+        - `dest`: destination file name
+    
+    getUrlFileSize(url, proxies={})
+    
+    lookForUnstartedBlock()
+        Look for unstarted block and return it's property list.
+    
+    splitFile(size)
+    
+    thread_download(url, thread_id)
+        Thread of downloading, find undownloaded file blocks and download it.
+
+DATA
+    BLOCK_SIZE = 262144
+    DATAHUB = ('127.0.0.1', 20110)
+    THREAD = 2
+
+
